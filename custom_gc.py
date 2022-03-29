@@ -6,12 +6,15 @@ from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QMainWindow, QGraphic
 from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetrics
 from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
 
+from graphical_object import Angle, angle_rad_difference
+
 POINTS_SIZE = 40
 THORN_WIDTH = 5
 THORN_LENGTH = 30
 
 THORN_LABEL_FONT_FAMILY = "times"
 THORN_LABEL_FONT_SIZE = 40
+THORN_LABEL_FONT = QFont(THORN_LABEL_FONT_FAMILY, THORN_LABEL_FONT_SIZE)
 
 
 class Ellips:
@@ -77,7 +80,9 @@ class Thorn:
 
 
 class ThornLabel:
-    def __init__(self, num: int):
+    def __init__(self, x: int, y: int, num: int):
+        self.x: int = x
+        self.y: int = y
         self.num: int = num
         self._path_item = QGraphicsPathItem()
         self._base_path = QPainterPath()
@@ -90,20 +95,13 @@ class ThornLabel:
 
     def evaluate_path(self):
         self._base_path.clear()
-        x_end = self.x_start + math.cos(math.radians(-self.angle)) * THORN_LENGTH
-        y_end = self.x_start + math.sin(math.radians(-self.angle)) * THORN_LENGTH
-        poly = QPolygonF(
-                [
-                    QPointF(self.x_start, self.y_start),
-                    QPointF(x_end, y_end)
-                ])
-        self._base_path.addPolygon(poly)
+        point = QPointF(self.x, self.y)
+        font = THORN_LABEL_FONT
+        text = str(self.num)
+        self._base_path.addText(point, font, text)
         self.path_item.setPath(self._base_path)
 
     def set_view_properties(self):
-        pen = QPen(Qt.black)
-        pen.setWidthF(THORN_WIDTH)
-        self.path_item.setPen(pen)
         self.path_item.setBrush(QBrush(Qt.black))
 
     def path(self):
@@ -113,9 +111,11 @@ class ThornLabel:
 class HedgehogPoint:
     # хедж-хог
     def __init__(self, x_center: int, y_center: int, angles: list[int] = None):
+        """ angles in degrees """
         self.x_center: int = x_center
         self.y_center: int = y_center
         self.angles = angles or []
+        assert len(self.angles) <= 3
         self._path_item = QGraphicsPathItem()
         self._base_path = QPainterPath()
         self.evaluate_path()
@@ -137,10 +137,34 @@ class HedgehogPoint:
             thorn.path_item.setParentItem(self.path_item)
             self._base_path.addPath(thorn.path())
 
+        self.evaluate_thorn_labels()
         self.path_item.setPath(self._base_path)
 
     def set_view_properties(self):
         self.path_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+
+    def evaluate_thorn_labels(self):
+        sizes = []
+        radiuses = []
+        rad_angles = []
+        differences = []
+        fm = QFontMetrics(THORN_LABEL_FONT)
+        # max_index = len(self.angles)-1
+        for i, angle in enumerate(self.angles):
+            br = fm.boundingRect(str(i))
+            w = br.width()
+            h = br.height()
+            sizes.append((w, h))
+            radiuses.append(0.5 * (w ** 2 + h ** 2) ** 0.5)
+            rad_angles.append(Angle(math.radians(angle)))
+            if i != 0:
+                differences.append(angle_rad_difference(rad_angles[i], rad_angles[i - 1]))
+        differences.append(angle_rad_difference(rad_angles[0], rad_angles[-1]))
+        print(sizes)
+        print(radiuses)
+        print(rad_angles)
+        print("0-2pi", [rad_angle.angle_0_2pi for rad_angle in rad_angles])
+        print(differences)
 
 
 class CustomGC(QGraphicsScene):
