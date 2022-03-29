@@ -1,13 +1,17 @@
 from copy import copy
 import math
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QMainWindow, QGraphicsPathItem, QGraphicsRectItem, \
+    QGraphicsEllipseItem, QGraphicsItem, QGraphicsPolygonItem, QGraphicsSceneMouseEvent, QGraphicsTextItem
+from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetrics
+from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
 
 POINTS_SIZE = 40
 THORN_WIDTH = 5
 THORN_LENGTH = 30
+
+THORN_LABEL_FONT_FAMILY = "times"
+THORN_LABEL_FONT_SIZE = 40
 
 
 class Ellips:
@@ -41,6 +45,40 @@ class Thorn:
         self.x_start: int = x_start
         self.y_start: int = y_start
         self.angle: int = angle
+        self._path_item = QGraphicsPathItem()
+        self._base_path = QPainterPath()
+        self.evaluate_path()
+        self.set_view_properties()
+
+    @property
+    def path_item(self):
+        return self._path_item
+
+    def evaluate_path(self):
+        self._base_path.clear()
+        x_end = self.x_start + math.cos(math.radians(-self.angle)) * THORN_LENGTH
+        y_end = self.y_start + math.sin(math.radians(-self.angle)) * THORN_LENGTH
+        poly = QPolygonF(
+                [
+                    QPointF(self.x_start, self.y_start),
+                    QPointF(x_end, y_end)
+                ])
+        self._base_path.addPolygon(poly)
+        self.path_item.setPath(self._base_path)
+
+    def set_view_properties(self):
+        pen = QPen(Qt.black)
+        pen.setWidthF(THORN_WIDTH)
+        self.path_item.setPen(pen)
+        self.path_item.setBrush(QBrush(Qt.black))
+
+    def path(self):
+        return self._base_path
+
+
+class ThornLabel:
+    def __init__(self, num: int):
+        self.num: int = num
         self._path_item = QGraphicsPathItem()
         self._base_path = QPainterPath()
         self.evaluate_path()
@@ -109,8 +147,11 @@ class CustomGC(QGraphicsScene):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setBackgroundBrush(QBrush(Qt.white))
-        self.addItem(HedgehogPoint(100, 100, [0, 90, 180]).path_item)
-        self.addItem(HedgehogPoint(200, 200, [45, 135, 270]).path_item)
+        self.add_hp(200, 200, [45, 135, 270])
+        self.add_hp(300, 500, [0, 90, 180])
+
+    def add_hp(self, x, y, angles):
+        self.addItem(HedgehogPoint(x, y, angles).path_item)
 
 
 class CustomView(QGraphicsView):
