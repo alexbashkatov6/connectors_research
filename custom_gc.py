@@ -149,7 +149,6 @@ class HedgehogPoint:
         rad_angles = []
         differences = []
         fm = QFontMetrics(THORN_LABEL_FONT)
-        # max_index = len(self.angles)-1
         for i, angle in enumerate(self.angles):
             br = fm.boundingRect(str(i))
             w = br.width()
@@ -165,6 +164,16 @@ class HedgehogPoint:
         print(rad_angles)
         print("0-2pi", [rad_angle.angle_0_2pi for rad_angle in rad_angles])
         print(differences)
+
+        sides = []  # +1 means label should be placed counterclockwise
+        segm_count = len(self.angles)
+        mean_angle = 2 * math.pi / segm_count
+        for difference in differences:
+            if (abs(difference) - mean_angle) * difference < 0:
+                sides.append(1)
+            else:
+                sides.append(-1)
+        print("sides", sides)
 
 
 class CustomGC(QGraphicsScene):
