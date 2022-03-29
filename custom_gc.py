@@ -10,73 +10,107 @@ THORN_WIDTH = 5
 THORN_LENGTH = 30
 
 
-class Ellips(QGraphicsPathItem):
-    def __init__(self, x: int, y: int, *args, **kwargs):
-        # self._x: int = x
-        # self._y: int = y
-        super().__init__(*args, **kwargs)
+class Ellips:
+    def __init__(self, x_center: int, y_center: int):
+        self.x_center: int = x_center
+        self.y_center: int = y_center
+        self._path_item = QGraphicsPathItem()
         self._base_path = QPainterPath()
-        self._base_path.addEllipse(QRectF(x, y, POINTS_SIZE, POINTS_SIZE))
+        self.evaluate_path()
+        self.set_view_properties()
 
-        self.setPath(self._base_path)
-        self.setBrush(QBrush(Qt.black))
-        # self.setFlags(QGraphicsItem.ItemIsMovable)  #  | QGraphicsItem.ItemIsSelectable
+    @property
+    def path_item(self):
+        return self._path_item
 
-        # self._pen = QPen(Qt.black)
-        # self._pen.setWidthF(5)
-        # self.setPen(self._pen)
+    def evaluate_path(self):
+        self._base_path.clear()
+        self._base_path.addEllipse(QRectF(self.x_center - POINTS_SIZE/2, self.y_center - POINTS_SIZE/2,
+                                          POINTS_SIZE, POINTS_SIZE))
+        self.path_item.setPath(self._base_path)
+
+    def set_view_properties(self):
+        self.path_item.setBrush(QBrush(Qt.black))
+
+    def path(self):
+        return self._base_path
 
 
-class Thorn(QGraphicsPathItem):
-    def __init__(self, x: int, y: int, angle: int, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        x_end = x + math.cos(math.radians(-angle)) * THORN_LENGTH
-        y_end = x + math.sin(math.radians(-angle)) * THORN_LENGTH
+class Thorn:
+    def __init__(self, x_start: int, y_start: int, angle: int):
+        self.x_start: int = x_start
+        self.y_start: int = y_start
+        self.angle: int = angle
+        self._path_item = QGraphicsPathItem()
+        self._base_path = QPainterPath()
+        self.evaluate_path()
+        self.set_view_properties()
+
+    @property
+    def path_item(self):
+        return self._path_item
+
+    def evaluate_path(self):
+        self._base_path.clear()
+        x_end = self.x_start + math.cos(math.radians(-self.angle)) * THORN_LENGTH
+        y_end = self.x_start + math.sin(math.radians(-self.angle)) * THORN_LENGTH
         poly = QPolygonF(
                 [
-                    QPointF(x, y),
+                    QPointF(self.x_start, self.y_start),
                     QPointF(x_end, y_end)
                 ])
-
-        self._pen = QPen(Qt.black)
-        self._pen.setWidthF(THORN_WIDTH)
-
-        self._base_path = QPainterPath()
         self._base_path.addPolygon(poly)
+        self.path_item.setPath(self._base_path)
 
-        self.setPath(self._base_path)
-        self.setPen(self._pen)
-        self.setBrush(QBrush(Qt.black))
-        # self.setFlags(QGraphicsItem.ItemIsMovable)  #  | QGraphicsItem.ItemIsSelectable
+    def set_view_properties(self):
+        pen = QPen(Qt.black)
+        pen.setWidthF(THORN_WIDTH)
+        self.path_item.setPen(pen)
+        self.path_item.setBrush(QBrush(Qt.black))
+
+    def path(self):
+        return self._base_path
 
 
-class HedgehogPoint(QGraphicsPathItem):
+class HedgehogPoint:
     # хедж-хог
-    def __init__(self, x: int, y: int, angles: list[int] = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        angles = angles or []
-
+    def __init__(self, x_center: int, y_center: int, angles: list[int] = None):
+        self.x_center: int = x_center
+        self.y_center: int = y_center
+        self.angles = angles or []
+        self._path_item = QGraphicsPathItem()
         self._base_path = QPainterPath()
+        self.evaluate_path()
+        self.set_view_properties()
 
-        self._ellipse = Ellips(x, y)
-        self._ellipse.setParentItem(self)
-        self._base_path.addPath(self._ellipse.path())
+    @property
+    def path_item(self):
+        return self._path_item
 
-        for angle in angles:
-            self._thorn = Thorn(x+POINTS_SIZE/2, y+POINTS_SIZE/2, angle)
-            self._thorn.setParentItem(self)
-            self._base_path.addPath(self._thorn.path())
+    def evaluate_path(self):
+        self._base_path.clear()
 
-        self.setPath(self._base_path)
-        self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        ellipse = Ellips(self.x_center, self.y_center)
+        ellipse.path_item.setParentItem(self.path_item)
+        self._base_path.addPath(ellipse.path())
+
+        for angle in self.angles:
+            thorn = Thorn(self.x_center, self.y_center, angle)
+            thorn.path_item.setParentItem(self.path_item)
+            self._base_path.addPath(thorn.path())
+
+        self.path_item.setPath(self._base_path)
+
+    def set_view_properties(self):
+        self.path_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
 
 class CustomGC(QGraphicsScene):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setBackgroundBrush(QBrush(Qt.white))
-        self.addItem(HedgehogPoint(100, 100, [0, 90, 180]))
-        self.addItem(HedgehogPoint(200, 200, [45, 135, 270]))
+        self.addItem(HedgehogPoint(100, 100, [0, 90, 180]).path_item)
+        self.addItem(HedgehogPoint(200, 200, [45, 135, 270]).path_item)
 
 
 class CustomView(QGraphicsView):
