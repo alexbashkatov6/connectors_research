@@ -144,6 +144,7 @@ class HedgehogPoint:
         self.path_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
     def evaluate_thorn_labels(self):
+        """ if distance between two rays less then mean, label should be placed outside this angle """
         sizes = []
         radiuses = []
         rad_angles = []
