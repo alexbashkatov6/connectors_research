@@ -157,6 +157,8 @@ class HedgehogPoint:
         radiuses = []
         rad_angles = []
         differences = []
+
+        """ Stage 1. Differences """
         fm = QFontMetrics(THORN_LABEL_FONT)
         for i, angle in enumerate(self.angles):
             br = fm.boundingRect(str(i))
@@ -170,12 +172,8 @@ class HedgehogPoint:
             if i != 0:
                 differences.append(angle_rad_difference(rad_angles[i], rad_angles[i - 1]))
         differences.append(angle_rad_difference(rad_angles[0], rad_angles[-1]))
-        # print(sizes)
-        # print(radiuses)
-        # print(rad_angles)
-        # print("0-2pi", [rad_angle.angle_0_2pi for rad_angle in rad_angles])
-        # print(differences)
 
+        """ Stage 2. Sides """
         sides = []  # +1 means label should be placed counterclockwise
         segm_count = len(self.angles)
         mean_angle = 2 * math.pi / segm_count
@@ -185,7 +183,8 @@ class HedgehogPoint:
             else:
                 sides.append(-1)
         sides = [sides[-1]] + sides[:-1]
-        # print("sides", sides)
+
+        """ Stage 3. Centers """
         centers = []
         for i, thorn in enumerate(self.thorns):
             to_center_angle = thorn.angle + sides[i] * 90
@@ -193,10 +192,11 @@ class HedgehogPoint:
             x_center = thorn.x_end + radiuses[i] * math.cos(math.radians(to_center_angle))
             y_center = thorn.y_end - radiuses[i] * math.sin(math.radians(to_center_angle))
             centers.append((x_center, y_center))
+
+        """ Stage 4. Corners """
         corners = []
         for i, center in enumerate(centers):
             corners.append((center[0]-widths[i]/2, center[1]+heights[i]/2))
-        # print("corners", corners)
         for i, corner in enumerate(corners):
             tl = ThornLabel(*corner, i)
             self._base_path.addPath(tl.path())
