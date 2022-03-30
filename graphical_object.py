@@ -256,6 +256,39 @@ class Line2D:
             self.c = -self.pnt.x
             return
 
+    class Rect:
+        def __init__(self, x: Union[Real, Point2D] = None, y: Union[Real, Angle] = None, w: Real = None, h: Real = None,
+                     center: Point2D = None, angle: Angle = None):
+            """ Rect(x, y, w, h) Rect(center, angle, w, h) """
+            if type(x) == Point2D:
+                center = x
+                angle = y
+                x = None
+                y = None
+            assert not (w is None) & (not (h is None)), 'Width and height should be defined'
+            assert ((not (x is None)) & (not (y is None)) & (angle is None)) | \
+                   ((not (center is None)) & (not (angle is None))), 'Not complete input data'
+
+            if angle is None:
+                angle = Angle(0)
+            if not (x is None):
+                self.center = Point2D(float(x + w / 2), float(y + h / 2))
+                self.angle = Angle(0)
+            else:
+                self.center = center
+                self.angle = angle
+            self.center: Point2D
+            self.angle: Angle
+            self.w = w
+            self.h = h
+
+        def includes_point(self, p: Point2D):
+            """border includes points too"""
+            rot_point = rotate_operation(self.center, p, Angle(-self.angle.free_angle))
+            print('rot_point', rot_point)
+            return (self.center.x - self.w / 2 <= rot_point.x <= self.center.x + self.w / 2) & \
+                   (self.center.y - self.h / 2 <= rot_point.y <= self.center.y + self.h / 2)
+
 
 class GeometryPrimitive(ABC):
 
@@ -303,11 +336,6 @@ class BoundedCurve(GeometryPrimitive):
 
     def bezier_optimization(self) -> Angle:
         float_angle_1 = self.angle_1.angle_mpi2_ppi2
-        # print("in optim", float_angle_1, (float_angle_1 + ANGLE_EQUAL_VIEW_PRECISION,
-        #                                   float_angle_1 + math.pi - ANGLE_EQUAL_VIEW_PRECISION))
-        # print("optim result", cut_optimization(self.max_curvature,
-        #                               borders=(float_angle_1 + ANGLE_EQUAL_VIEW_PRECISION,
-        #                                        float_angle_1 + math.pi - ANGLE_EQUAL_VIEW_PRECISION))[0])
         return Angle(cut_optimization(self.max_curvature,
                                       borders=(float_angle_1 + ANGLE_EQUAL_VIEW_PRECISION,
                                                float_angle_1 + math.pi - ANGLE_EQUAL_VIEW_PRECISION))[0])
@@ -319,6 +347,10 @@ class BoundedCurve(GeometryPrimitive):
                                 borders=(0, 1), maxormin=CEMaxMin('max'))[1]
 
     def point_by_param(self, t: Real) -> Point2D:
+        if t < 0:
+            t = 0
+        elif t > 1:
+            t = 1
         x1, y1 = self.pnt_1.coords
         x2, y2 = self.pnt_2.coords
         if self.geom_type == 'line_segment':
@@ -340,6 +372,10 @@ class BoundedCurve(GeometryPrimitive):
         return self.point_by_param(t).y
 
     def angle_by_param(self, t: Real) -> Angle:
+        if t < 0:
+            t = 0
+        elif t > 1:
+            t = 1
         if self.geom_type == 'line_segment':
             return Line2D(self.pnt_1, self.pnt_2).angle
         x1, y1 = self.pnt_1.coords
@@ -383,6 +419,44 @@ class BoundedCurve(GeometryPrimitive):
             return 'line_segment', *self.pnt_1.coords, *self.pnt_2.coords
         else:
             return 'bezier', *self.pnt_1.coords, *self.bezier_control_point.coords, *self.pnt_2.coords
+
+    @property
+    def approximate_length(self):
+        approx_length = 0
+        last_point = self.point_by_param(0)
+        for i in range(100):
+            next_point = self.point_by_param((i+1)/100)
+            approx_length += distance(next_point, last_point)
+            last_point = next_point
+        return approx_length
+
+    def points_of_equidistant_container(self, width: Real) -> list[Point2D]:
+        devision_points = []
+        print("approx length = ", self.approximate_length)
+        approx_length = self.approximate_length
+        devision = [0]
+        hw = width/2  # half width
+        nominal_step = hw/approx_length
+        current_step = nominal_step
+        while True:
+            t = devision[-1]
+            next_t = t + current_step
+            if next_t > 1:
+                next_t = 1
+            distance_ = distance(self.point_by_param(t), self.point_by_param(next_t))
+            if distance_ > hw:
+                current_step /= 2
+                continue
+            else:
+                if current_step < nominal_step:
+                    current_step *= 2
+                else:
+                    current_step = nominal_step
+                devision.append(next_t)
+            if 1-next_t < nominal_step/10:
+                break
+        print("devision: len = {}, elements = {}".format(len(devision),  devision))
+        rectangles = []
 
 
 class Ellipse(GeometryPrimitive):
@@ -670,38 +744,6 @@ if __name__ == '__main__':
         # print(bc.display_params())
 
 
-    # class Rect:
-    #     def __init__(self, x: Union[Real, Point2D] = None, y: Union[Real, Angle] = None, w: Real = None, h: Real = None,
-    #                  center: Point2D = None, angle: Angle = None):
-    #         """ docstring """
-    #         if type(x) == Point2D:
-    #             center = x
-    #             angle = y
-    #             x = None
-    #             y = None
-    #         assert not (w is None) & (not (h is None)), 'Width and height should be defined'
-    #         assert ((not (x is None)) & (not (y is None)) & (angle is None)) | \
-    #                ((not (center is None)) & (not (angle is None))), 'Not complete input data'
-    #
-    #         if angle is None:
-    #             angle = Angle(0)
-    #         if not (x is None):
-    #             self.center = Point2D(float(x + w / 2), float(y + h / 2))
-    #             self.angle = Angle(0)
-    #         else:
-    #             self.center = center
-    #             self.angle = angle
-    #         self.center: Point2D
-    #         self.angle: Angle
-    #         self.w = w
-    #         self.h = h
-    #
-    #     def includes_point(self, p: Point2D):
-    #         """border includes points too"""
-    #         rot_point = rotate_operation(self.center, p, Angle(-self.angle.free_angle))
-    #         print('rot_point', rot_point)
-    #         return (self.center.x - self.w / 2 <= rot_point.x <= self.center.x + self.w / 2) & \
-    #                (self.center.y - self.h / 2 <= rot_point.y <= self.center.y + self.h / 2)
 
 
         # r = Rect(Point2D(7, 5), Angle(-26.565 * math.pi / 180), 8.944, 4.472)
@@ -823,9 +865,19 @@ if __name__ == '__main__':
         for i in range(20):
             print((i*2*math.pi/20+0.001)*180/math.pi, bc_station.max_curvature(i*2*math.pi/20+0.001))
 
-    test_2 = True
+    test_2 = False
     if test_2:
         bc_station = BoundedCurve(Point2D(650.0, 0.0), Point2D(525.0, -2.5), Angle(math.pi))
         print(bc_station)
+
+    test_3 = True
+    if test_3:
+        bc = BoundedCurve(Point2D(1, 1), Point2D(3, 1))
+        bc_2 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(math.pi/4), Angle(math.pi/2))
+        bc_3 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(math.pi/4))
+        bc_4 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(0))
+        bc_list = [bc, bc_2, bc_3, bc_4]
+        for bc_ in bc_list:
+            bc_.points_of_equidistant_container(0.2)
 
 

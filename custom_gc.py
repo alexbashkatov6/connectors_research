@@ -1,3 +1,4 @@
+from __future__ import annotations
 from copy import copy
 import math
 from dataclasses import dataclass
@@ -212,6 +213,24 @@ class ConnectCondition:
     angle: int
 
 
+# class ConnectorShape(QGraphicsPathItem):
+#     def __init__(self, base_connector: Connector):
+#         super().__init__()
+#         self.base_connector = base_connector
+#
+#     @property
+#     def base_connector(self) -> Connector:
+#         return self._base_connector
+#
+#     @base_connector.setter
+#     def base_connector(self, c: Connector):
+#         self._base_connector = c
+#
+#     def shape(self) -> QPainterPath:
+#         base_path = copy(self.base_connector.path)
+#         base_path.
+
+
 class Connector:
     def __init__(self, start_cond: ConnectCondition, end_cond: ConnectCondition):
         self.start_cond = start_cond
@@ -245,7 +264,7 @@ class Connector:
         pen = QPen(Qt.black)
         pen.setWidthF(THORN_WIDTH)
         self.path_item.setPen(pen)
-        # self.path_item.setBrush(QBrush(Qt.black))
+        # self.path_item.shape()
         self.path_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
     def path(self):
