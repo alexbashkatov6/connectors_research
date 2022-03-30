@@ -898,6 +898,7 @@ if __name__ == '__main__':
                   bc_3.max_curvature(first + (second-first) * i/(n_-1)))
 
         print(math.degrees(2.562329))
+        print(math.degrees(3.13316))
 
         # return Angle(cut_optimization(bc_3.max_curvature,
         #                               borders=(float_angle_1 + ANGLE_EQUAL_VIEW_PRECISION,
