@@ -336,9 +336,15 @@ class BoundedCurve(GeometryPrimitive):
 
     def bezier_optimization(self) -> Angle:
         float_angle_1 = self.angle_1.angle_mpi2_ppi2
-        return Angle(cut_optimization(self.max_curvature,
-                                      borders=(float_angle_1 + ANGLE_EQUAL_VIEW_PRECISION,
-                                               float_angle_1 + math.pi - ANGLE_EQUAL_VIEW_PRECISION))[0])
+        angle_between_points = Line2D(self.pnt_1, self.pnt_2).angle.angle_mpi2_ppi2
+        min_angle, max_angle = min(angle_between_points, float_angle_1), max(angle_between_points, float_angle_1)
+        first_optimization = cut_optimization(self.max_curvature,
+                                  borders=(min_angle + ANGLE_EQUAL_VIEW_PRECISION,
+                                           max_angle - ANGLE_EQUAL_VIEW_PRECISION))
+        second_optimization = cut_optimization(self.max_curvature,
+                                  borders=(max_angle + ANGLE_EQUAL_VIEW_PRECISION,
+                                           min_angle + math.pi - ANGLE_EQUAL_VIEW_PRECISION))
+        return Angle(first_optimization[0]) if first_optimization[1] < second_optimization[1] else Angle(second_optimization[0])
 
     def max_curvature(self, float_angle: float) -> float:
         angle = Angle(float_angle)
@@ -448,12 +454,9 @@ class BoundedCurve(GeometryPrimitive):
                 current_step /= 2
                 continue
             else:
-                if current_step < nominal_step:
-                    current_step *= 2
-                else:
-                    current_step = nominal_step
+                current_step = nominal_step
                 devision.append(next_t)
-            if 1-next_t < nominal_step/10:
+            if next_t == 1:
                 break
         print("devision: len = {}, elements = {}".format(len(devision),  devision))
 
@@ -882,23 +885,26 @@ if __name__ == '__main__':
         bc_2 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(math.pi/4), Angle(math.pi/2))
         bc_3 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(math.pi/4))
         bc_4 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(0))
-        bc_list = [bc, bc_2, bc_3, bc_4]
+        bc_5 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(math.pi/4), Angle(-math.pi/4))  # , Angle(-math.pi/4)
+        bc_list = [bc, bc_2, bc_3, bc_4, bc_5]
         for bc_ in bc_list:
             bc_.points_of_equidistant_container(0.2)
-        print(bc_3.angle_by_param(0), bc_3.angle_by_param(0.5), bc_3.angle_by_param(1))
-        print(bc_3.bezier_control_point)
-        print(bc_3.angle_2)
+        # print(bc_3.angle_by_param(0), bc_3.angle_by_param(0.5), bc_3.angle_by_param(1))
+        # print(bc_3.bezier_control_point)
+        # print(bc_3.angle_2)
 
-        float_angle_1_ = bc_3.angle_1.angle_mpi2_ppi2
-        n_ = 100
-        for i in range(n_):
-            first = float_angle_1_ + ANGLE_EQUAL_VIEW_PRECISION
-            second = float_angle_1_ + math.pi - ANGLE_EQUAL_VIEW_PRECISION
-            print(first + (second-first) * i/(n_-1),
-                  bc_3.max_curvature(first + (second-first) * i/(n_-1)))
-
-        print(math.degrees(2.562329))
-        print(math.degrees(3.13316))
+        # float_angle_1_ = bc_3.angle_1.angle_mpi2_ppi2
+        # n_ = 100
+        # for i in range(n_):
+        #     first = float_angle_1_ + ANGLE_EQUAL_VIEW_PRECISION
+        #     second = float_angle_1_ + math.pi - ANGLE_EQUAL_VIEW_PRECISION
+        #     print(first + (second-first) * i/(n_-1),
+        #           bc_3.max_curvature(first + (second-first) * i/(n_-1)))
+        #
+        # print(math.degrees(2.562329))
+        # print(math.degrees(3.13316))
+        # print(math.pi*3/4)
+        # print(bezier_curvature(0.5, bc_5.pnt_1, bc_5.pnt_2, bc_5.bezier_control_point))
 
         # return Angle(cut_optimization(bc_3.max_curvature,
         #                               borders=(float_angle_1 + ANGLE_EQUAL_VIEW_PRECISION,
