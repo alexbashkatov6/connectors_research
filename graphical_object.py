@@ -456,6 +456,12 @@ class BoundedCurve(GeometryPrimitive):
             if 1-next_t < nominal_step/10:
                 break
         print("devision: len = {}, elements = {}".format(len(devision),  devision))
+
+        normal_angles = []
+        for t in devision:
+            normal_angle = self.angle_by_param(t) + math.pi / 2
+            normal_angles.append(normal_angle)
+        print("normal_angles elements = {}".format(normal_angles))
         rectangles = []
 
 
@@ -879,5 +885,22 @@ if __name__ == '__main__':
         bc_list = [bc, bc_2, bc_3, bc_4]
         for bc_ in bc_list:
             bc_.points_of_equidistant_container(0.2)
+        print(bc_3.angle_by_param(0), bc_3.angle_by_param(0.5), bc_3.angle_by_param(1))
+        print(bc_3.bezier_control_point)
+        print(bc_3.angle_2)
+
+        float_angle_1_ = bc_3.angle_1.angle_mpi2_ppi2
+        n_ = 100
+        for i in range(n_):
+            first = float_angle_1_ + ANGLE_EQUAL_VIEW_PRECISION
+            second = float_angle_1_ + math.pi - ANGLE_EQUAL_VIEW_PRECISION
+            print(first + (second-first) * i/(n_-1),
+                  bc_3.max_curvature(first + (second-first) * i/(n_-1)))
+
+        print(math.degrees(2.562329))
+
+        # return Angle(cut_optimization(bc_3.max_curvature,
+        #                               borders=(float_angle_1 + ANGLE_EQUAL_VIEW_PRECISION,
+        #                                        float_angle_1 + math.pi - ANGLE_EQUAL_VIEW_PRECISION))[0])
 
 
