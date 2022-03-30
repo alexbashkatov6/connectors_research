@@ -13,7 +13,7 @@ THORN_WIDTH = 5
 THORN_LENGTH = 30
 
 THORN_LABEL_FONT_FAMILY = "times"
-THORN_LABEL_FONT_SIZE = 40
+THORN_LABEL_FONT_SIZE = 10
 THORN_LABEL_FONT = QFont(THORN_LABEL_FONT_FAMILY, THORN_LABEL_FONT_SIZE)
 
 
@@ -47,6 +47,8 @@ class Thorn:
     def __init__(self, x_start: int, y_start: int, angle: int):
         self.x_start: int = x_start
         self.y_start: int = y_start
+        self.x_end: int = x_start
+        self.y_end: int = y_start
         self.angle: int = angle
         self._path_item = QGraphicsPathItem()
         self._base_path = QPainterPath()
@@ -59,12 +61,12 @@ class Thorn:
 
     def evaluate_path(self):
         self._base_path.clear()
-        x_end = self.x_start + math.cos(math.radians(-self.angle)) * THORN_LENGTH
-        y_end = self.y_start + math.sin(math.radians(-self.angle)) * THORN_LENGTH
+        self.x_end = self.x_start + math.cos(math.radians(-self.angle)) * THORN_LENGTH
+        self.y_end = self.y_start + math.sin(math.radians(-self.angle)) * THORN_LENGTH
         poly = QPolygonF(
                 [
                     QPointF(self.x_start, self.y_start),
-                    QPointF(x_end, y_end)
+                    QPointF(self.x_end, self.y_end)
                 ])
         self._base_path.addPolygon(poly)
         self.path_item.setPath(self._base_path)
@@ -116,6 +118,8 @@ class HedgehogPoint:
         self.y_center: int = y_center
         self.angles = angles or []
         assert len(self.angles) <= 3
+        self.ellipse = None
+        self.thorns = []
         self._path_item = QGraphicsPathItem()
         self._base_path = QPainterPath()
         self.evaluate_path()
@@ -130,11 +134,13 @@ class HedgehogPoint:
 
         ellipse = Ellips(self.x_center, self.y_center)
         ellipse.path_item.setParentItem(self.path_item)
+        self.ellipse = ellipse
         self._base_path.addPath(ellipse.path())
 
         for angle in self.angles:
             thorn = Thorn(self.x_center, self.y_center, angle)
             thorn.path_item.setParentItem(self.path_item)
+            self.thorns.append(thorn)
             self._base_path.addPath(thorn.path())
 
         self.evaluate_thorn_labels()
@@ -146,6 +152,8 @@ class HedgehogPoint:
     def evaluate_thorn_labels(self):
         """ if distance between two rays less then mean, label should be placed outside this angle """
         sizes = []
+        widths = []
+        heights = []
         radiuses = []
         rad_angles = []
         differences = []
@@ -153,18 +161,20 @@ class HedgehogPoint:
         for i, angle in enumerate(self.angles):
             br = fm.boundingRect(str(i))
             w = br.width()
+            widths.append(w)
             h = br.height()
+            heights.append(h)
             sizes.append((w, h))
             radiuses.append(0.5 * (w ** 2 + h ** 2) ** 0.5)
             rad_angles.append(Angle(math.radians(angle)))
             if i != 0:
                 differences.append(angle_rad_difference(rad_angles[i], rad_angles[i - 1]))
         differences.append(angle_rad_difference(rad_angles[0], rad_angles[-1]))
-        print(sizes)
-        print(radiuses)
-        print(rad_angles)
-        print("0-2pi", [rad_angle.angle_0_2pi for rad_angle in rad_angles])
-        print(differences)
+        # print(sizes)
+        # print(radiuses)
+        # print(rad_angles)
+        # print("0-2pi", [rad_angle.angle_0_2pi for rad_angle in rad_angles])
+        # print(differences)
 
         sides = []  # +1 means label should be placed counterclockwise
         segm_count = len(self.angles)
@@ -174,7 +184,23 @@ class HedgehogPoint:
                 sides.append(1)
             else:
                 sides.append(-1)
-        print("sides", sides)
+        sides = [sides[-1]] + sides[:-1]
+        # print("sides", sides)
+        centers = []
+        for i, thorn in enumerate(self.thorns):
+            to_center_angle = thorn.angle + sides[i] * 90
+            print("to_center_angle", to_center_angle)
+            x_center = thorn.x_end + radiuses[i] * math.cos(math.radians(to_center_angle))
+            y_center = thorn.y_end - radiuses[i] * math.sin(math.radians(to_center_angle))
+            centers.append((x_center, y_center))
+        corners = []
+        for i, center in enumerate(centers):
+            corners.append((center[0]-widths[i]/2, center[1]+heights[i]/2))
+        # print("corners", corners)
+        for i, corner in enumerate(corners):
+            tl = ThornLabel(*corner, i)
+            self._base_path.addPath(tl.path())
+            tl.path_item.setParentItem(self.path_item)
 
 
 class CustomGC(QGraphicsScene):
