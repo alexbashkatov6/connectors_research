@@ -11,8 +11,8 @@ from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
 from graphical_object import Angle, angle_rad_difference, BoundedCurve, Point2D, CECurveType
 
 POINTS_SIZE = 40
-THORN_WIDTH = 5
-THORN_LENGTH = 30
+THORN_WIDTH = 5  # 5
+THORN_LENGTH = 30  # 30
 
 THORN_LABEL_FONT_FAMILY = "times"
 THORN_LABEL_FONT_SIZE = 10

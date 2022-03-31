@@ -124,6 +124,17 @@ def normal(pnt: Point2D, line: Line2D) -> tuple[Line2D, Point2D]:
     return line_normal, lines_intersection(line, line_normal)
 
 
+def normal_distance(pnt: Point2D, line: Line2D) -> float:
+    return distance(normal(pnt, line)[1], pnt)
+
+
+def parallel_line(pnt: Point2D, line: Line2D, assertion_not_equal_given: bool = False) -> Line2D:
+    """ returns line parallel given throw given point """
+    assert not assertion_not_equal_given, "Not implemented"
+    # normal_line, normal_point = normal(pnt, line)
+    return Line2D(pnt, angle=line.angle)
+
+
 def pnt_between(pnt: Point2D, pnt_1: Point2D, pnt_2: Point2D) -> bool:
     assert Line2D(pnt, pnt_1).angle == Line2D(pnt, pnt_2).angle, "Points not on 1 line"
     return (distance(pnt, pnt_1) <= distance(pnt_1, pnt_2)) and (distance(pnt, pnt_2) <= distance(pnt_1, pnt_2))
@@ -434,11 +445,10 @@ class BoundedCurve(GeometryPrimitive):
             next_point = self.point_by_param((i+1)/100)
             approx_length += distance(next_point, last_point)
             last_point = next_point
+        print("approx length = ", approx_length)
         return approx_length
 
     def points_of_equidistant_container(self, width: Real) -> list[Point2D]:
-        devision_points = []
-        print("approx length = ", self.approximate_length)
         approx_length = self.approximate_length
         devision = [0]
         hw = width/2  # half width
