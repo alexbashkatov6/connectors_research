@@ -135,24 +135,32 @@ def normal_distance(pnt: Point2D, line: Line2D) -> float:
     return distance_point_to_point(normal(pnt, line)[1], pnt)
 
 
-def parallel_line_throw_point(pnt: Point2D, line: Line2D, assertion_not_equal_given: bool = False) -> Line2D:
+def parallel_line_throw_point(pnt: Point2D, line: Line2D, assertion_not_equal_given: bool = True) -> Line2D:
     """ returns line parallel given throw given point """
-    assert not assertion_not_equal_given, "Not implemented"
-    # normal_line, normal_point = normal(pnt, line)
+    if assertion_not_equal_given:
+        assert not point_on_line(pnt, line), "Point already on given line"
     return Line2D(pnt, angle=line.angle)
 
 
-def parallel_line_on_distance(line: Line2D, distance_: Real, direction_is_positive: bool) -> Line2D:
+def build_point_on_line_on_distance(base_point: Point2D, line: Line2D, distance: Real, direction_is_positive: bool) -> Point2D:
+    """ returns point on line on distance from given point """
+    assert point_on_line(base_point, line), "Base point not on line"
+    if direction_is_positive:
+        k = 1
+    else:
+        k = -1
+    result_point = base_point + line.unit_move_deltas * k * distance
+    assert point_on_line(result_point, line), "Result point not on line"
+    return result_point
+
+
+def parallel_line_on_distance(line: Line2D, distance: Real, direction_is_positive: bool) -> Line2D:
     """ returns line parallel given throw given point """
-    assert not assertion_not_equal_given, "Not implemented"
-    # normal_line, normal_point = normal(pnt, line)
-    return Line2D(pnt, angle=line.angle)
-
-
-def build_point_on_distance(base_point: Point2D, line: Line2D, direction_is_positive: bool) -> Point2D:
-    pass
-    # assert point_on_line(base_point, line), "Point not on line"
-    # normal_line, normal_point = normal(base_point, line)
+    pnt = line.any_point_on_line
+    assert point_on_line(pnt, line), "Point not on line"
+    normal_line = normal(pnt, line)[0]
+    new_pnt = build_point_on_line_on_distance(pnt, normal_line, distance, direction_is_positive)
+    return parallel_line_throw_point(new_pnt, line)
 
 
 def point_mirror(pnt_for_mirror: Point2D, pnt_origin: Point2D) -> Point2D:
@@ -196,7 +204,19 @@ class Point2D:
 
     __str__ = __repr__
 
-    def __eq__(self, other):
+    def __add__(self, other) -> Point2D:
+        assert isinstance(other, Point2D), 'Can add only points'
+        return Point2D(self.x+other.x, self.y+other.y)
+
+    def __sub__(self, other) -> Point2D:
+        assert isinstance(other, Point2D), 'Can sub only points'
+        return Point2D(self.x-other.x, self.y-other.y)
+
+    def __mul__(self, coefficient) -> Point2D:
+        assert isinstance(coefficient, Real), 'Can mul only on real'
+        return Point2D(self.x * coefficient, self.y * coefficient)
+
+    def __eq__(self, other) -> bool:
         assert isinstance(other, Point2D), 'Can compare only points'
         return coord_equality(self.x, other.x) and coord_equality(self.y, other.y)
 
@@ -297,16 +317,23 @@ class Line2D:
             return
 
     @property
-    def unit_move_deltas(self) -> tuple[float, float]:
+    def unit_move_deltas(self) -> Point2D:
         """ if step on line in positive direction == 1, returns dx, dy """
         if self.a == 0:
-            return 0., 1.
+            return Point2D(0, 1)
         elif self.b == 0:
-            return 1., 0.
+            return Point2D(1, 0)
         else:
             dx = abs(self.b / (self.b ** 2 + self.a ** 2)**0.5)
             dy = -self.a / self.b * dx
-            return dx, dy
+            return Point2D(dx, dy)
+
+    @property
+    def any_point_on_line(self) -> Point2D:
+        if self.b == 0:
+            return Point2D(-self.c/self.a, 0)
+        else:
+            return Point2D(0, -self.c/self.b)
 
     class Rect:
         def __init__(self, x: Union[Real, Point2D] = None, y: Union[Real, Angle] = None, w: Real = None, h: Real = None,
@@ -952,6 +979,18 @@ if __name__ == '__main__':
 
     test_3 = True
     if test_3:
+        # test point and line new operations
+        base_line = Line2D(Point2D(0, 0), Point2D(3, 4))
+        base_point = Point2D(0, 0)
+        print(point_on_line(base_point, base_line))
+        print(build_point_on_line_on_distance(base_point, base_line, 5, False))
+        print(point_mirror(Point2D(3, 4), Point2D(0, 0)))
+        print(parallel_line_on_distance(base_line, 5, True))
+        print(Point2D(3, 4)-Point2D(1, 2))
+        print(Point2D(3, 4)*2)
+
+    test_4 = False
+    if test_4:
         bc = BoundedCurve(Point2D(1, 1), Point2D(3, 1))
         bc_2 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(math.pi/4), Angle(math.pi/2))
         bc_3 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(math.pi/4))
