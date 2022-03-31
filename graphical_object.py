@@ -560,10 +560,14 @@ class BoundedCurve(GeometryPrimitive):
             last_current_next_points.append((last_point, point, next_point))
         print("last_current_next_points = {}".format(last_current_next_points))
 
+        """ left and right side - if see from point t=0 to t=1 """
         rectangles = []
-        i = 0
-        for last_point, current_point, next_point in last_current_next_points:
-            pass
+        left_candidate_contour_points = []
+        right_candidate_contour_points = []
+        for i, last_current_next_point in enumerate(last_current_next_points):
+            last_point, current_point, next_point = last_current_next_point
+            normal_angle = normal_angles[i]
+            normal_line = Line2D(current_point, angle=normal_angle)
 
 
 class Ellipse(GeometryPrimitive):
@@ -977,7 +981,7 @@ if __name__ == '__main__':
         bc_station = BoundedCurve(Point2D(650.0, 0.0), Point2D(525.0, -2.5), Angle(math.pi))
         print(bc_station)
 
-    test_3 = True
+    test_3 = False
     if test_3:
         # test point and line new operations
         base_line = Line2D(Point2D(0, 0), Point2D(3, 4))
@@ -989,7 +993,7 @@ if __name__ == '__main__':
         print(Point2D(3, 4)-Point2D(1, 2))
         print(Point2D(3, 4)*2)
 
-    test_4 = False
+    test_4 = True
     if test_4:
         bc = BoundedCurve(Point2D(1, 1), Point2D(3, 1))
         bc_2 = BoundedCurve(Point2D(1, 1), Point2D(3, 1), Angle(math.pi/4), Angle(math.pi/2))
@@ -999,6 +1003,7 @@ if __name__ == '__main__':
         bc_list = [bc, bc_2, bc_3, bc_4, bc_5]
         for bc_ in bc_list:
             bc_.points_of_equidistant_container(0.2)
+
         # print(bc_3.angle_by_param(0), bc_3.angle_by_param(0.5), bc_3.angle_by_param(1))
         # print(bc_3.bezier_control_point)
         # print(bc_3.angle_2)
