@@ -69,7 +69,7 @@ def cut_optimization(func, *args, borders: tuple[Real, Real], maxormin: CEMaxMin
     return curr_x_value, curr_f_value
 
 
-def distance(pnt_1: Point2D, pnt_2: Point2D) -> float:
+def distance_point_to_point(pnt_1: Point2D, pnt_2: Point2D) -> float:
     return math.dist(pnt_1.coords, pnt_2.coords)
 
 
@@ -80,7 +80,8 @@ def coord_equality(coord_1: float, coord_2: float, coord_precision: float = None
 
 
 def evaluate_vector(pnt_1: Point2D, pnt_2: Point2D) -> (Angle, bool):
-    """ returns angle and if direction from pnt_1 to pnt_2 is positive """
+    """ returns angle and if direction from pnt_1 to pnt_2 is positive
+    direction is positive if it in range (-pi/2, pi/2] """
     coord_eq_prec = COORD_EQUAL_PRECISION
     max_cycle_count = 5
     while True:
@@ -124,20 +125,44 @@ def normal(pnt: Point2D, line: Line2D) -> tuple[Line2D, Point2D]:
     return line_normal, lines_intersection(line, line_normal)
 
 
+def point_on_line(pnt: Point2D, line: Line2D) -> bool:
+    normal_point = normal(pnt, line)[1]
+    return pnt == normal_point
+
+
 def normal_distance(pnt: Point2D, line: Line2D) -> float:
-    return distance(normal(pnt, line)[1], pnt)
+    """ returns normal distance from point to line """
+    return distance_point_to_point(normal(pnt, line)[1], pnt)
 
 
-def parallel_line(pnt: Point2D, line: Line2D, assertion_not_equal_given: bool = False) -> Line2D:
+def parallel_line_throw_point(pnt: Point2D, line: Line2D, assertion_not_equal_given: bool = False) -> Line2D:
     """ returns line parallel given throw given point """
     assert not assertion_not_equal_given, "Not implemented"
     # normal_line, normal_point = normal(pnt, line)
     return Line2D(pnt, angle=line.angle)
 
 
+def parallel_line_on_distance(line: Line2D, distance_: Real, direction_is_positive: bool) -> Line2D:
+    """ returns line parallel given throw given point """
+    assert not assertion_not_equal_given, "Not implemented"
+    # normal_line, normal_point = normal(pnt, line)
+    return Line2D(pnt, angle=line.angle)
+
+
+def build_point_on_distance(base_point: Point2D, line: Line2D, direction_is_positive: bool) -> Point2D:
+    pass
+    # assert point_on_line(base_point, line), "Point not on line"
+    # normal_line, normal_point = normal(base_point, line)
+
+
+def point_mirror(pnt_for_mirror: Point2D, pnt_origin: Point2D) -> Point2D:
+    """ makes mirror of point """
+    return Point2D(2*pnt_origin.x - pnt_for_mirror.x, 2*pnt_origin.y - pnt_for_mirror.y)
+
+
 def pnt_between(pnt: Point2D, pnt_1: Point2D, pnt_2: Point2D) -> bool:
     assert Line2D(pnt, pnt_1).angle == Line2D(pnt, pnt_2).angle, "Points not on 1 line"
-    return (distance(pnt, pnt_1) <= distance(pnt_1, pnt_2)) and (distance(pnt, pnt_2) <= distance(pnt_1, pnt_2))
+    return (distance_point_to_point(pnt, pnt_1) <= distance_point_to_point(pnt_1, pnt_2)) and (distance_point_to_point(pnt, pnt_2) <= distance_point_to_point(pnt_1, pnt_2))
 
 
 def bezier_curvature(t: Real, pnt_1: Point2D, pnt_2: Point2D, pnt_control: Point2D):
@@ -170,6 +195,10 @@ class Point2D:
         return "{}({}, {})".format(self.__class__.__name__, self.x, self.y)
 
     __str__ = __repr__
+
+    def __eq__(self, other):
+        assert isinstance(other, Point2D), 'Can compare only points'
+        return coord_equality(self.x, other.x) and coord_equality(self.y, other.y)
 
     @property
     def coords(self):
@@ -266,6 +295,18 @@ class Line2D:
             self.b = 0
             self.c = -self.pnt.x
             return
+
+    @property
+    def unit_move_deltas(self) -> tuple[float, float]:
+        """ if step on line in positive direction == 1, returns dx, dy """
+        if self.a == 0:
+            return 0., 1.
+        elif self.b == 0:
+            return 1., 0.
+        else:
+            dx = abs(self.b / (self.b ** 2 + self.a ** 2)**0.5)
+            dy = -self.a / self.b * dx
+            return dx, dy
 
     class Rect:
         def __init__(self, x: Union[Real, Point2D] = None, y: Union[Real, Angle] = None, w: Real = None, h: Real = None,
@@ -404,15 +445,15 @@ class BoundedCurve(GeometryPrimitive):
         pnt_direction = Point2D(pnt.x + dx_dt, pnt.y + dy_dt)
         return Line2D(pnt, pnt_direction).angle
 
-    def t_devision(self):
+    def t_division_bounded_by_angle(self):
         if self.geom_type == 'line_segment':
             return [0, 1]
-        devision = [0]
+        division = [0]
         count = 10
         nominal_step = 1/count
         current_step = nominal_step
         while True:
-            t = devision[-1]
+            t = division[-1]
             next_t = t + current_step
             angle_t = self.angle_by_param(t)
             angle_t_delta_t = self.angle_by_param(next_t)
@@ -424,12 +465,12 @@ class BoundedCurve(GeometryPrimitive):
                     current_step *= 2
                 else:
                     current_step = nominal_step
-                devision.append(next_t)
+                division.append(next_t)
             if 1-next_t < nominal_step/10:
                 break
-        if devision[-1] > 1:
-            devision[-1] = 1
-        return devision
+        if division[-1] > 1:
+            division[-1] = 1
+        return division
 
     def draw_parameters(self):
         if self.geom_type == 'line_segment':
@@ -443,39 +484,59 @@ class BoundedCurve(GeometryPrimitive):
         last_point = self.point_by_param(0)
         for i in range(100):
             next_point = self.point_by_param((i+1)/100)
-            approx_length += distance(next_point, last_point)
+            approx_length += distance_point_to_point(next_point, last_point)
             last_point = next_point
         print("approx length = ", approx_length)
         return approx_length
 
     def points_of_equidistant_container(self, width: Real) -> list[Point2D]:
         approx_length = self.approximate_length
-        devision = [0]
+        division = [0]
         hw = width/2  # half width
         nominal_step = hw/approx_length
         current_step = nominal_step
         while True:
-            t = devision[-1]
+            t = division[-1]
             next_t = t + current_step
             if next_t > 1:
                 next_t = 1
-            distance_ = distance(self.point_by_param(t), self.point_by_param(next_t))
+            distance_ = distance_point_to_point(self.point_by_param(t), self.point_by_param(next_t))
             if distance_ > hw:
                 current_step /= 2
                 continue
             else:
                 current_step = nominal_step
-                devision.append(next_t)
+                division.append(next_t)
             if next_t == 1:
                 break
-        print("devision: len = {}, elements = {}".format(len(devision),  devision))
+        print("division: len = {}, elements = {}".format(len(division),  division))
 
         normal_angles = []
-        for t in devision:
+        for t in division:
             normal_angle = self.angle_by_param(t) + math.pi / 2
             normal_angles.append(normal_angle)
         print("normal_angles elements = {}".format(normal_angles))
+
+        last_current_next_points = []
+        div_length = len(division)
+        for i, t in enumerate(division):
+            point = self.point_by_param(t)
+            if i == 0:
+                next_point = self.point_by_param(division[i+1])
+                last_point = point_mirror(next_point, point)
+            elif i == (div_length-1):
+                last_point = self.point_by_param(division[i-1])
+                next_point = point_mirror(last_point, point)
+            else:
+                last_point = self.point_by_param(division[i-1])
+                next_point = self.point_by_param(division[i+1])
+            last_current_next_points.append((last_point, point, next_point))
+        print("last_current_next_points = {}".format(last_current_next_points))
+
         rectangles = []
+        i = 0
+        for last_point, current_point, next_point in last_current_next_points:
+            pass
 
 
 class Ellipse(GeometryPrimitive):
@@ -605,7 +666,7 @@ class FrameAngle:
 
 
 def distance_in_frame(f: Frame, fp_1: FramePoint, fp_2: FramePoint):
-    return distance(fp_1.reevaluate_in_cs(f.center_fcs), fp_2.reevaluate_in_cs(f.center_fcs))
+    return distance_point_to_point(fp_1.reevaluate_in_cs(f.center_fcs), fp_2.reevaluate_in_cs(f.center_fcs))
 
 
 class FPViewProperties:
@@ -849,7 +910,7 @@ if __name__ == '__main__':
         # print(bc_5.draw_parameters())
 
         print()
-        print(distance(Point2D(1, 1), Point2D(2, 2)))
+        print(distance_point_to_point(Point2D(1, 1), Point2D(2, 2)))
         print(normal(Point2D(1, 1), Line2D(Point2D(2, 2), Point2D(3, 1))))
         print(pnt_between(Point2D(2, 2), Point2D(1, 1), Point2D(3, 3)))
 
@@ -867,7 +928,7 @@ if __name__ == '__main__':
 
         print()
         print("sep")
-        sep = bc_3.t_devision()
+        sep = bc_3.t_division_bounded_by_angle()
         print(sep)
         print(len(sep))
 
@@ -881,8 +942,8 @@ if __name__ == '__main__':
 
         bc_station = BoundedCurve(Point2D(650.0, 0.0), Point2D(525.0, -2.5), Angle(0))
         print(bc_station)
-        for i in range(20):
-            print((i*2*math.pi/20+0.001)*180/math.pi, bc_station.max_curvature(i*2*math.pi/20+0.001))
+        for i_ in range(20):
+            print((i_*2*math.pi/20+0.001)*180/math.pi, bc_station.max_curvature(i_*2*math.pi/20+0.001))
 
     test_2 = False
     if test_2:
