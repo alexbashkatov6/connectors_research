@@ -521,6 +521,12 @@ class BoundedCurve(GeometryPrimitive):
         return approx_length
 
     def points_of_equidistant_container(self, width: Real) -> list[Point2D]:
+        """ implement 2-stage algorithm
+        1. each t-point - circle R
+        2. on circle - n points
+        3. if point in other circle - delete it, and mem nearest points candidates
+        4. when deletion ends, switch on merging algorithm, search closest from nearest points
+        5. union points to groups """
         approx_length = self.approximate_length
         division = [0]
         hw = width/2  # half width
