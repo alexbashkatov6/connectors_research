@@ -267,6 +267,7 @@ class Connector:
         # self.path_item.shape()
         self.path_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
+
     def path(self):
         return self._base_path
 
@@ -278,6 +279,13 @@ class CustomGC(QGraphicsScene):
         self.add_hp(200, 200, [45, 135, 270])
         self.add_hp(300, 500, [0, 90, 180])
         self.add_connector(ConnectCondition(200, 200, 270), ConnectCondition(300, 500, 180))
+
+        # bp = QPainterPath()
+        # bp.moveTo(100, 100)
+        # bp.quadTo(QPointF(100, 100), QPointF(200, 300))
+        # item = QGraphicsPathItem()
+        # item.setPath(bp)
+        # self.addItem(item)
 
     def add_hp(self, x, y, angles):
         self.addItem(HedgehogPoint(x, y, angles).path_item)

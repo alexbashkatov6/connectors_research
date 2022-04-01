@@ -184,6 +184,10 @@ def bezier_curvature(t: Real, pnt_1: Point2D, pnt_2: Point2D, pnt_control: Point
                        2 * (y3 - y1) * t - (y3 - y1) + t * y1 - t * y2) ** 2) ** (-1.5))
 
 
+def bezier_tangent(t: Real, pnt_1: Point2D, pnt_2: Point2D, pnt_control: Point2D):
+    pass
+
+
 class Point2D:
     def __init__(self, *args):
         """ Point2D(Real, Real) Point2D(tuple[Real, Real]) """
