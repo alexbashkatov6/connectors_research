@@ -1,11 +1,14 @@
 from __future__ import annotations
 from copy import copy
+from typing import Optional
 import math
 from dataclasses import dataclass
 
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QMainWindow, QGraphicsPathItem, QGraphicsRectItem, \
-    QGraphicsEllipseItem, QGraphicsItem, QGraphicsPolygonItem, QGraphicsSceneMouseEvent, QGraphicsTextItem
-from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetrics
+    QGraphicsEllipseItem, QGraphicsItem, QGraphicsPolygonItem, QGraphicsSceneMouseEvent, QGraphicsTextItem, QWidget, \
+    QStyleOptionGraphicsItem, QStyle
+from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetrics, QPainterPathStroker, QTransform, \
+    QRegion, QPainter
 from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
 
 from graphical_object import Angle, angle_rad_difference, BoundedCurve, Point2D, CECurveType
@@ -231,11 +234,53 @@ class ConnectCondition:
 #         base_path.
 
 
+class ShapedQGraphicsPathItem(QGraphicsPathItem):
+
+    # def __init__(self):
+    #     super().__init__()
+    #     self._outshape: Optional[QPainterPath] = None
+
+    def setPath(self, path: QPainterPath) -> None:
+        super().setPath(path)
+        ps = QPainterPathStroker()
+        ps.setWidth(40)
+        self._outshape = ps.createStroke(path)
+        # self.setBoundingRegionGranularity(1)
+
+    def shape(self) -> QPainterPath:
+        print("shapr", self._outshape)
+        return self._outshape
+
+    def boundingRect(self) -> QRectF:
+        print("boundingRect")
+        return super().boundingRect()
+
+    def boundingRegion(self, itemToDeviceTransform: QTransform) -> QRegion:
+        print("boundingRegion")
+        return super().boundingRegion(itemToDeviceTransform)
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget] = None) -> None:
+        # print("paint")
+        my_option = QStyleOptionGraphicsItem()
+        my_option.state &= ~QStyle.State_Selected
+        super().paint(painter, my_option, widget)
+    #     print("polygon", self._outshape.toFillPolygon())
+    #     self.setBoundingRegionGranularity(1)
+    #     return QRegion(self._outshape.toFillPolygon())
+
+    # def clipPath(self) -> QPainterPath:
+    #     return self._outshape
+
+    # def opaqueArea(self) -> QPainterPath:
+    #     return self._outshape
+
+
+
 class Connector:
     def __init__(self, start_cond: ConnectCondition, end_cond: ConnectCondition):
         self.start_cond = start_cond
         self.end_cond = end_cond
-        self._path_item = QGraphicsPathItem()
+        self._path_item = ShapedQGraphicsPathItem()
         self._base_path = QPainterPath()
         self.evaluate_path()
         self.set_view_properties()
@@ -280,18 +325,38 @@ class CustomGC(QGraphicsScene):
         self.add_hp(300, 500, [0, 90, 180])
         self.add_connector(ConnectCondition(200, 200, 270), ConnectCondition(300, 500, 180))
 
-        # bp = QPainterPath()
-        # bp.moveTo(100, 100)
-        # bp.quadTo(QPointF(100, 100), QPointF(200, 300))
-        # item = QGraphicsPathItem()
-        # item.setPath(bp)
-        # self.addItem(item)
+        bp = QPainterPath()
+        bp.moveTo(100, 100)
+        bp.quadTo(QPointF(100, 100), QPointF(200, 300))
+        item = QGraphicsPathItem()
+        item.setPath(bp)
+        item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        item.setBoundingRegionGranularity(1)
+        self.addItem(item)
+
+        # ps = QPainterPathStroker()
+        # ps.setWidth(40)
+        # p2 = ps.createStroke(bp)
+        # item2 = QGraphicsPathItem()
+        # item2.setPath(p2)
+        # item2.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        # self.addItem(item2)
 
     def add_hp(self, x, y, angles):
         self.addItem(HedgehogPoint(x, y, angles).path_item)
 
     def add_connector(self, cc1: ConnectCondition, cc2: ConnectCondition):
-        self.addItem(Connector(cc1, cc2).path_item)
+        cnct = Connector(cc1, cc2)
+        self.addItem(cnct.path_item)
+        # self.setSelectionArea(cnct.path_item._outshape)
+
+        # ps = QPainterPathStroker()
+        # ps.setWidth(40)
+        # p2 = ps.createStroke(cnct.path())
+        # item2 = QGraphicsPathItem()
+        # item2.setPath(p2)
+        # item2.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        # self.addItem(item2)
 
 
 class CustomView(QGraphicsView):
