@@ -216,64 +216,21 @@ class ConnectCondition:
     angle: int
 
 
-# class ConnectorShape(QGraphicsPathItem):
-#     def __init__(self, base_connector: Connector):
-#         super().__init__()
-#         self.base_connector = base_connector
-#
-#     @property
-#     def base_connector(self) -> Connector:
-#         return self._base_connector
-#
-#     @base_connector.setter
-#     def base_connector(self, c: Connector):
-#         self._base_connector = c
-#
-#     def shape(self) -> QPainterPath:
-#         base_path = copy(self.base_connector.path)
-#         base_path.
-
-
 class ShapedQGraphicsPathItem(QGraphicsPathItem):
-
-    # def __init__(self):
-    #     super().__init__()
-    #     self._outshape: Optional[QPainterPath] = None
 
     def setPath(self, path: QPainterPath) -> None:
         super().setPath(path)
         ps = QPainterPathStroker()
         ps.setWidth(40)
         self._outshape = ps.createStroke(path)
-        # self.setBoundingRegionGranularity(1)
 
     def shape(self) -> QPainterPath:
-        print("shapr", self._outshape)
         return self._outshape
 
-    def boundingRect(self) -> QRectF:
-        print("boundingRect")
-        return super().boundingRect()
-
-    def boundingRegion(self, itemToDeviceTransform: QTransform) -> QRegion:
-        print("boundingRegion")
-        return super().boundingRegion(itemToDeviceTransform)
-
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget] = None) -> None:
-        # print("paint")
         my_option = QStyleOptionGraphicsItem()
         my_option.state &= ~QStyle.State_Selected
         super().paint(painter, my_option, widget)
-    #     print("polygon", self._outshape.toFillPolygon())
-    #     self.setBoundingRegionGranularity(1)
-    #     return QRegion(self._outshape.toFillPolygon())
-
-    # def clipPath(self) -> QPainterPath:
-    #     return self._outshape
-
-    # def opaqueArea(self) -> QPainterPath:
-    #     return self._outshape
-
 
 
 class Connector:
@@ -309,9 +266,7 @@ class Connector:
         pen = QPen(Qt.black)
         pen.setWidthF(THORN_WIDTH)
         self.path_item.setPen(pen)
-        # self.path_item.shape()
         self.path_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
-
 
     def path(self):
         return self._base_path
@@ -334,29 +289,11 @@ class CustomGC(QGraphicsScene):
         item.setBoundingRegionGranularity(1)
         self.addItem(item)
 
-        # ps = QPainterPathStroker()
-        # ps.setWidth(40)
-        # p2 = ps.createStroke(bp)
-        # item2 = QGraphicsPathItem()
-        # item2.setPath(p2)
-        # item2.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
-        # self.addItem(item2)
-
     def add_hp(self, x, y, angles):
         self.addItem(HedgehogPoint(x, y, angles).path_item)
 
     def add_connector(self, cc1: ConnectCondition, cc2: ConnectCondition):
-        cnct = Connector(cc1, cc2)
-        self.addItem(cnct.path_item)
-        # self.setSelectionArea(cnct.path_item._outshape)
-
-        # ps = QPainterPathStroker()
-        # ps.setWidth(40)
-        # p2 = ps.createStroke(cnct.path())
-        # item2 = QGraphicsPathItem()
-        # item2.setPath(p2)
-        # item2.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
-        # self.addItem(item2)
+        self.addItem(Connector(cc1, cc2).path_item)
 
 
 class CustomView(QGraphicsView):
