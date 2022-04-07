@@ -14,6 +14,10 @@ class Point2D:
         self.coords = np.array([x, y])
 
 
+class Angle:
+    pass
+
+
 class ParametricCurve:
     def __init__(self):
         self._func = None
@@ -29,6 +33,21 @@ class ParametricCurve:
 
 class CompoundParametricCurve:
     pass
+
+
+class UniversalConnectionCurve:
+    """ Based on cubic bezier curve CubicBezier """
+    def __init__(self, pnt_start: Point2D, pnt_end: Point2D,
+                 angle_start: Angle = None, angle_end: Angle = None):
+        self.pnt_start = pnt_start
+        self.pnt_end = pnt_end
+        self.angle_start = angle_start
+        self.angle_end = angle_end
+        self.start_dir_point_distance = 0
+        self.end_dir_point_distance = 0
+
+    def optimize_curvature(self):
+        pass
 
 
 if __name__ == "__main__":
