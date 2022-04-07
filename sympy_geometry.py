@@ -1,4 +1,4 @@
-from sympy import Point, are_similar, Line, Point3D, Line3D
+from sympy import Point, are_similar, Line, Point3D, Line3D, Segment, acos, pi
 
 # p1 = Point(1, 0)
 # p2 = Point(1., 0.)
@@ -6,6 +6,13 @@ from sympy import Point, are_similar, Line, Point3D, Line3D
 # print(are_similar(p1, p2))
 # print(are_similar(p2, p3))
 # l1 = Line()
-p1, p2, p3 = Point3D(0, 0, 0), Point3D(1, 1, 1), Point3D(-1, 2, 0)
-l1, l2 = Line3D(p1, p2), Line3D(p2, p3)
-print(l1.angle_between(l2))
+# p1, p2, p3, p4 = Point3D(0, 0, 0), Point3D(1, 1, 1), Point3D(-1, 2, 0), Point3D(20, 30, 40)
+# l1, l2 = Line3D(p1, p2), Line3D(p3, p4)
+# print(l1.angle_between(l2))
+# print(type(type(l1.angle_between(l2))))
+# print(Point(1.1, 0.).unit)
+# print(type(Point(1.1, 0.)[0]))
+# Segment(p1, p2)
+l1 = Line(Point(0.,0.), Point(1,0))
+l2 = Line(Point(0.,0.), Point(1,1.5))
+print(l1.projection(l2))
