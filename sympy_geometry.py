@@ -1,4 +1,4 @@
-from sympy import Point, are_similar, Line, Point3D, Line3D, Segment, acos, pi
+from sympy import Point, are_similar, Line, Point3D, Line2D, Line3D, Segment, acos, pi, Ellipse
 
 # p1 = Point(1, 0)
 # p2 = Point(1., 0.)
@@ -13,6 +13,14 @@ from sympy import Point, are_similar, Line, Point3D, Line3D, Segment, acos, pi
 # print(Point(1.1, 0.).unit)
 # print(type(Point(1.1, 0.)[0]))
 # Segment(p1, p2)
-l1 = Line(Point(0.,0.), Point(1,0))
-l2 = Line(Point(0.,0.), Point(1,1.5))
+l1 = Line(Point(0., 0.), Point(1, 1000000000))
+l2 = Line(Point(0., 0.), Point(1, 1000000000.000001))
 print(l1.projection(l2))
+print(l1.is_similar(l2))
+p = Point(2., 1.)
+print(p.x)
+print(p.y)
+# Ellipse()
+# Point()
+# Line3D()
+# Line2D()

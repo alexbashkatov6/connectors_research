@@ -234,7 +234,7 @@ class Point2D:
 
 
 class Angle:
-    """ angle is measured clockwise """
+    """ angle is measured from positive x to positive y """
     def __init__(self, free_angle: Real):
         self.free_angle = float(free_angle)
 
