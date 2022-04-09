@@ -189,7 +189,8 @@ class UniversalConnectionCurve:
         deltas0 = np.array([4, 4])
         start_time = time.time()
         res = minimize(self.curv_optimizer, deltas0, bounds=Bounds([0.1, 0.1], [np.inf, np.inf]), method='Powell',
-                       options={'xtol': 1000, "ftol": 0.1}) #,, tol=1e-2, 'maxfev': 5
+                       options={'xtol': 1000, "ftol": 0.1})
+        # res = minimize(self.curv_optimizer, deltas0, method='CG')
         print("end of")
         self.sum_time_min_eval += (time.time() - start_time)
                #options={'maxiter': 10})  #e-6, 'disp': True
@@ -268,7 +269,9 @@ if __name__ == "__main__":
         # cc = UniversalConnectionCurve(Point2D(0, 0), Point2D(10, 10),
         #                               Angle(math.atan(0.5)), Angle(math.pi+math.atan(0.5)))
         # cc = UniversalConnectionCurve(Point2D(0, 0), Point2D(10, 10),
-        #                               Angle(0), Angle(math.pi))
+        #                               Angle(-math.atan(0.5)), Angle(math.pi-math.atan(0.5)))
+        # cc = UniversalConnectionCurve(Point2D(0, 0), Point2D(2, 10),
+        #                               Angle(-math.pi/2), Angle(math.pi/2))
         cc.eval_dir_points(tuple(cc.optimize_curvature().x))
         print("end optim")
         print("sum time float", cc.sum_time_float_eval)
