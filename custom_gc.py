@@ -121,6 +121,12 @@ class ThornLabel:
 
 class HedgehogGraphicsPathItem(QGraphicsPathItem):
 
+    def __init__(self, base_hp: HedgehogPoint):
+        super().__init__()
+        self.base_hp = base_hp
+        self.start_pos = None
+        # self.scenePos()
+
     def setPath(self, path: QPainterPath) -> None:
         super().setPath(path)
         ps = QPainterPathStroker()
@@ -137,15 +143,18 @@ class HedgehogGraphicsPathItem(QGraphicsPathItem):
 
     def mousePressEvent(self, e: QGraphicsSceneMouseEvent):
         super().mousePressEvent(e)
-        print("pressed")
+        self.start_pos = e.scenePos()
 
     def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent):
         super().mouseReleaseEvent(e)
-        print("released")
+        self.start_pos = None
 
     def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent):
         super().mouseMoveEvent(e)
-        print("moved")
+        start_pos = self.start_pos
+        end_pos = e.scenePos()
+        self.start_pos = e.scenePos()
+        self.base_hp.moved(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
 
 
 class HedgehogPoint:
@@ -155,13 +164,30 @@ class HedgehogPoint:
         self.x_center: int = x_center
         self.y_center: int = y_center
         self.angles = angles or []
+        self.thorn_ends = []
+        self.connectors: list[tuple[Connector, str]] = []  # [(cnct, "start")
         assert len(self.angles) <= 3
         self.ellipse = None
         self.thorns = []
-        self._path_item = HedgehogGraphicsPathItem()
+        self._path_item = HedgehogGraphicsPathItem(self)
         self._base_path = QPainterPath()
         self.evaluate_path()
         self.set_view_properties()
+
+    def moved(self, x0, y0, x_new, y_new):
+        # print("moved", x0, y0, x_new, y_new)
+        for cnct_cond in self.connectors:
+            cnct, start_or_end = cnct_cond
+            if start_or_end == "start":
+                old_cond = cnct.start_cond
+            else:
+                old_cond = cnct.end_cond
+            old_coords = old_cond.x, old_cond.y, old_cond.angle
+            new_coords = old_coords[0] + x_new - x0, old_coords[1] + y_new - y0, old_coords[2]
+            if start_or_end == "start":
+                cnct.start_cond = ConnectCondition(*new_coords)
+            else:
+                cnct.end_cond = ConnectCondition(*new_coords)
 
     @property
     def path_item(self):
@@ -179,6 +205,7 @@ class HedgehogPoint:
             thorn = Thorn(self.x_center, self.y_center, angle)
             thorn.path_item.setParentItem(self.path_item)
             self.thorns.append(thorn)
+            self.thorn_ends.append((thorn.x_end, thorn.y_end))
             self._base_path.addPath(thorn.path())
 
         self.evaluate_thorn_labels()
@@ -266,8 +293,8 @@ class ShapedQGraphicsPathItem(QGraphicsPathItem):
 
 class Connector:
     def __init__(self, start_cond: ConnectCondition, end_cond: ConnectCondition):
-        self.start_cond = start_cond
-        self.end_cond = end_cond
+        self._start_cond = start_cond
+        self._end_cond = end_cond
         self._path_item = ShapedQGraphicsPathItem()
         self._base_path = QPainterPath()
         self.evaluate_path()
@@ -276,6 +303,26 @@ class Connector:
     @property
     def path_item(self):
         return self._path_item
+
+    @property
+    def start_cond(self):
+        return self._start_cond
+
+    @start_cond.setter
+    def start_cond(self, val):
+        # print("start_cond val =", val)
+        self._start_cond = val
+        self.evaluate_path()
+
+    @property
+    def end_cond(self):
+        return self._end_cond
+
+    @end_cond.setter
+    def end_cond(self, val):
+        # print("end_cond val =", val)
+        self._end_cond = val
+        self.evaluate_path()
 
     def evaluate_path(self):
         self._base_path.clear()
@@ -296,7 +343,7 @@ class Connector:
         pen = QPen(Qt.black)
         pen.setWidthF(THORN_WIDTH)
         self.path_item.setPen(pen)
-        self.path_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        self.path_item.setFlags(QGraphicsItem.ItemIsSelectable)  # QGraphicsItem.ItemIsMovable |
 
     def path(self):
         return self._base_path
@@ -306,24 +353,29 @@ class CustomGC(QGraphicsScene):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setBackgroundBrush(QBrush(Qt.white))
-        self.add_hp(200, 200, [45, 135, 270])
-        self.add_hp(300, 500, [0, 90, 180])
-        self.add_connector(ConnectCondition(200, 200, 270), ConnectCondition(300, 500, 180))
+        # self.hp_list = []
+        # self.cnct_list = []
+        hp_1 = self.add_hp(200, 200, [45, 135, 270])
+        hp_2 = self.add_hp(300, 500, [0, 90, 180])
+        cnct_12_22 = self.add_connector(hp_1, 1, hp_2, 2)
 
-        bp = QPainterPath()
-        bp.moveTo(100, 100)
-        bp.quadTo(QPointF(100, 100), QPointF(200, 300))
-        item = QGraphicsPathItem()
-        item.setPath(bp)
-        item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
-        item.setBoundingRegionGranularity(1)
-        self.addItem(item)
+    def add_hp(self, x, y, angles) -> HedgehogPoint:
+        hp = HedgehogPoint(x, y, angles)
+        self.addItem(hp.path_item)
+        return hp
 
-    def add_hp(self, x, y, angles):
-        self.addItem(HedgehogPoint(x, y, angles).path_item)
-
-    def add_connector(self, cc1: ConnectCondition, cc2: ConnectCondition):
-        self.addItem(Connector(cc1, cc2).path_item)
+    def add_connector(self, hp1: HedgehogPoint, num_point_1: int,
+                      hp2: HedgehogPoint, num_point_2: int) -> Connector:
+        cc1 = ConnectCondition(*hp1.thorn_ends[num_point_1], hp1.angles[num_point_1])
+        cc2 = ConnectCondition(*hp2.thorn_ends[num_point_2], hp2.angles[num_point_2])
+        cnct = Connector(cc1, cc2)
+        hp1.connectors.append((cnct, "start"))
+        hp2.connectors.append((cnct, "end"))
+        self.addItem(cnct.path_item)
+        # cnct.start_cond = ConnectCondition(hp1.x_center, hp1.y_center, hp1.angles[1])
+        # print("cnct", cnct.start_cond, cnct.end_cond)
+        # cnct.path_item.re
+        return cnct
 
 
 class CustomView(QGraphicsView):
