@@ -288,7 +288,7 @@ if __name__ == "__main__":
     test_6 = True
     if test_6:
         curves = [
-        UniversalConnectionCurve(Point2D(0e+0, 0e+0), Point2D(1e-3, 1e-3),
+        UniversalConnectionCurve(Point2D(0e+0, 0e+0), Point2D(1e+3, 1e+3),
                                       Angle(math.atan(0.5)), Angle(-0.5*math.pi-math.atan(0.5))),
         UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 1),
                                       Angle(math.atan(0.5)), Angle(-0.5*math.pi+math.atan(0.5))),
@@ -307,12 +307,12 @@ if __name__ == "__main__":
         UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 0),
                                       Angle(0), Angle(math.pi))
         ]
-        cc = curves[8]
+        cc = curves[0]
         if TIME_EVALUATION:
             print("sum time float", cc.sum_time_float_eval)
             print("sum time min", cc.sum_time_min_eval)
         # cc.pnt_start = Point2D(0, 1)
-        cc.angle_end = Angle(math.atan(0.5))
+        # cc.angle_end = Angle(math.atan(0.5))
         cc.plot()
 
         # curve = bezier.Curve.from_nodes(cc.nodes_for_print())

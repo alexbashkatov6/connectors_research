@@ -11,7 +11,9 @@ from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetri
     QRegion, QPainter
 from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
 
-from graphical_object import Angle, angle_rad_difference, BoundedCurve, Point2D, CECurveType
+# from graphical_object import Angle, angle_rad_difference, BoundedCurve, Point2D, CECurveType
+from sympy import Point2D
+from graphic_numpy import Angle, angle_rad_difference, UniversalConnectionCurve
 
 POINTS_SIZE = 40
 THORN_WIDTH = 5  # 5
@@ -252,14 +254,20 @@ class Connector:
         angle_start = Angle(-math.radians(self.start_cond.angle))
         point_end = Point2D(self.end_cond.x, self.end_cond.y)
         angle_end = Angle(-math.radians(self.end_cond.angle))
-        conn_curve = BoundedCurve(point_start, point_end, angle_start, angle_end)
-        if conn_curve.geom_type != CECurveType.line_segment:
-            self._base_path.moveTo(self.start_cond.x, self.start_cond.y)
-            control_point = conn_curve.bezier_control_point
-            self._base_path.quadTo(QPointF(control_point.x, control_point.y),
-                                   QPointF(self.end_cond.x, self.end_cond.y))
-        else:
-            pass
+        conn_curve = UniversalConnectionCurve(point_start, point_end, angle_start, angle_end)
+        # if conn_curve.geom_type != CECurveType.line_segment:
+        #     self._base_path.moveTo(self.start_cond.x, self.start_cond.y)
+        #     control_point = conn_curve.bezier_control_point
+        #     self._base_path.quadTo(QPointF(control_point.x, control_point.y),
+        #                            QPointF(self.end_cond.x, self.end_cond.y))
+        # else:
+        #     pass
+        control_point_1 = conn_curve.start_dir_point
+        control_point_2 = conn_curve.end_dir_point
+        self._base_path.moveTo(self.start_cond.x, self.start_cond.y)
+        self._base_path.cubicTo(QPointF(control_point_1.x, control_point_1.y),
+                                QPointF(control_point_2.x, control_point_2.y),
+                                QPointF(self.end_cond.x, self.end_cond.y))
         self.path_item.setPath(self._base_path)
 
     def set_view_properties(self):
