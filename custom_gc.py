@@ -119,6 +119,35 @@ class ThornLabel:
         return self._base_path
 
 
+class HedgehogGraphicsPathItem(QGraphicsPathItem):
+
+    def setPath(self, path: QPainterPath) -> None:
+        super().setPath(path)
+        ps = QPainterPathStroker()
+        ps.setWidth(40)
+        self._outshape = ps.createStroke(path)
+
+    def shape(self) -> QPainterPath:
+        return self._outshape
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget] = None) -> None:
+        my_option = QStyleOptionGraphicsItem()
+        my_option.state &= ~QStyle.State_Selected
+        super().paint(painter, my_option, widget)
+
+    def mousePressEvent(self, e: QGraphicsSceneMouseEvent):
+        super().mousePressEvent(e)
+        print("pressed")
+
+    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent):
+        super().mouseReleaseEvent(e)
+        print("released")
+
+    def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent):
+        super().mouseMoveEvent(e)
+        print("moved")
+
+
 class HedgehogPoint:
     # хедж-хог
     def __init__(self, x_center: int, y_center: int, angles: list[int] = None):
@@ -129,7 +158,7 @@ class HedgehogPoint:
         assert len(self.angles) <= 3
         self.ellipse = None
         self.thorns = []
-        self._path_item = QGraphicsPathItem()
+        self._path_item = HedgehogGraphicsPathItem()
         self._base_path = QPainterPath()
         self.evaluate_path()
         self.set_view_properties()
@@ -255,13 +284,6 @@ class Connector:
         point_end = Point2D(self.end_cond.x, self.end_cond.y)
         angle_end = Angle(-math.radians(self.end_cond.angle))
         conn_curve = UniversalConnectionCurve(point_start, point_end, angle_start, angle_end)
-        # if conn_curve.geom_type != CECurveType.line_segment:
-        #     self._base_path.moveTo(self.start_cond.x, self.start_cond.y)
-        #     control_point = conn_curve.bezier_control_point
-        #     self._base_path.quadTo(QPointF(control_point.x, control_point.y),
-        #                            QPointF(self.end_cond.x, self.end_cond.y))
-        # else:
-        #     pass
         control_point_1 = conn_curve.start_dir_point
         control_point_2 = conn_curve.end_dir_point
         self._base_path.moveTo(self.start_cond.x, self.start_cond.y)
