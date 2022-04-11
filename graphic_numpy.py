@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation as R
 from scipy.optimize import minimize, Bounds
 import bezier
 from matplotlib import pyplot as plt
-from sympy import Point2D, Line2D, Ray2D
+from sympy import Point2D  # , Line2D, Ray2D
 import math
 from numbers import Real
 import time
@@ -87,19 +87,14 @@ class UniversalConnectionCurve:
     """ Based on cubic bezier curve CubicBezier """
     def __init__(self, pnt_start: Point2D, pnt_end: Point2D,
                  angle_start: Angle = None, angle_end: Angle = None):
-        self.pnt_start = pnt_start
-        self.pnt_end = pnt_end
-        self.angle_start = angle_start
-        self.angle_end = angle_end
-        self.start_dir_point = pnt_start
-        self.end_dir_point = pnt_end
-        self.init_dir_points()
+        self._pnt_start = pnt_start
+        self._pnt_end = pnt_end
+        self._angle_start = angle_start
+        self._angle_end = angle_end
         if TIME_EVALUATION:
             self.sum_time_float_eval = 0
             self.sum_time_min_eval = 0
-
-    def init_dir_points(self):
-        self.eval_dir_points(self.start_approximation)
+        self.optimize_curvature()
 
     def eval_dir_points(self, deltas: tuple[Real, Real]):
         self.start_dir_point = Point2D(self.pnt_start.x + deltas[0] * math.cos(self.angle_start.angle_0_2pi),
@@ -110,6 +105,42 @@ class UniversalConnectionCurve:
     def nodes_for_print(self) -> np.ndarray:
         return np.array([[float(p_.x) for p_ in self.points],
                          [float(p_.y) for p_ in self.points]])
+
+    @property
+    def pnt_start(self) -> Point2D:
+        return self._pnt_start
+
+    @pnt_start.setter
+    def pnt_start(self, val: Point2D):
+        self._pnt_start = val
+        self.optimize_curvature()
+
+    @property
+    def pnt_end(self) -> Point2D:
+        return self._pnt_end
+
+    @pnt_end.setter
+    def pnt_end(self, val: Point2D):
+        self._pnt_end = val
+        self.optimize_curvature()
+
+    @property
+    def angle_start(self) -> Angle:
+        return self._angle_start
+
+    @angle_start.setter
+    def angle_start(self, val: Angle):
+        self._angle_start = val
+        self.optimize_curvature()
+
+    @property
+    def angle_end(self) -> Angle:
+        return self._angle_end
+
+    @angle_end.setter
+    def angle_end(self, val: Angle):
+        self._angle_end = val
+        self.optimize_curvature()
 
     @property
     def base_distance(self):
@@ -139,61 +170,6 @@ class UniversalConnectionCurve:
     def p3(self):
         return self.pnt_end
 
-    def max_k(self, granuality=100):
-        'Calculate maximal curvature of the cubic Bezier curve.'
-        k = 0
-        t_max = 0
-        for t in range(0, granuality+1):
-            t = t / granuality
-            new_k = self.k_f_t(t)
-            if new_k > k:
-                k = new_k
-                t_max = t
-        return k, t_max
-
-    def k_f_t(self, t: Real):
-        if TIME_EVALUATION:
-            start_time = time.time()
-        x_d = 3 * ((1 - t) ** 2) * (float(self.p1.x) - float(self.p0.x)) + \
-              6 * (1 - t) * t * (float(self.p2.x) - float(self.p1.x)) + \
-              3 * (t ** 2) * (float(self.p3.x) - float(self.p2.x))
-        y_d = 3 * ((1 - t) ** 2) * (float(self.p1.y) - float(self.p0.y)) + \
-              6 * (1 - t) * t * (float(self.p2.y) - float(self.p1.y)) + \
-              3 * (t ** 2) * (float(self.p3.y) - float(self.p2.y))
-        x_dd = 6 * (1 - t) * (float(self.p2.x) - 2 * float(self.p1.x) + float(self.p0.x)) + \
-               6 * t * (float(self.p3.x) - 2 * float(self.p2.x) + float(self.p1.x))
-        y_dd = 6 * (1 - t) * (float(self.p2.y) - 2 * float(self.p1.y) + float(self.p0.y)) + \
-               6 * t * (float(self.p3.y) - 2 * float(self.p2.y) + float(self.p1.y))
-        # print("params", x_d, y_d, x_dd, y_dd)
-        # print("delta ktf = ", time.time()-start_time)
-        if TIME_EVALUATION:
-            self.sum_time_float_eval += (time.time() - start_time)
-        return abs(x_d*y_dd - y_d*x_dd)/math.pow(x_d**2 + y_d**2, 3/2)
-
-    def curv_optimizer(self, deltas: tuple[Real, Real]):
-        self.eval_dir_points(deltas)
-        # self.start_dir_point = Point2D(self.pnt_start.x + deltas[0] * math.cos(self.angle_start.angle_0_2pi),
-        #                                self.pnt_start.y + deltas[0] * math.sin(self.angle_start.angle_0_2pi))
-        # self.end_dir_point = Point2D(self.pnt_end.x + deltas[1] * math.cos(self.angle_end.angle_0_2pi),
-        #                              self.pnt_end.y + deltas[1] * math.sin(self.angle_end.angle_0_2pi))
-        return self.max_k()[0]
-
-    def old_optimize_curvature(self):
-        deltas0 = np.array(self.start_approximation)
-        if TIME_EVALUATION:
-            start_time = time.time()
-        # res = minimize(self.curv_optimizer, deltas0, bounds=Bounds([(1e-2)*self.base_distance, (1e-2)*self.base_distance],
-        #                                                            [np.inf, np.inf]), method='Powell',
-        #                options={'xtol': 1e-1*self.base_distance, "ftol": 1e+10*self.base_distance})  # , "ftol": 1e+5
-        res = minimize(self.curv_optimizer, deltas0, bounds=[((1e-2)*self.base_distance, np.inf), ((1e-2)*self.base_distance, np.inf)],
-                                                                   method='Powell',
-                       options={'xtol': 1e-1*self.base_distance, "ftol": np.inf})  # , "ftol": 1e+5, tol=1e-1*self.base_distance
-        # res = minimize(self.curv_optimizer, deltas0, method='CG')
-        print("end of")
-        if TIME_EVALUATION:
-            self.sum_time_min_eval += (time.time() - start_time)
-        return res
-
     def optimize_curvature(self):
         x0 = float(self.p0.x)
         y0 = float(self.p0.y)
@@ -206,7 +182,13 @@ class UniversalConnectionCurve:
         res = deltas_optimization(x0, y0, x3, y3, ang0, ang3)
         if TIME_EVALUATION:
             self.sum_time_min_eval += (time.time() - start_time)
+        self.eval_dir_points(res.x)
         return res
+
+    def plot(self):
+        curve = bezier.Curve.from_nodes(self.nodes_for_print())
+        curve.plot(100)
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -268,7 +250,7 @@ if __name__ == "__main__":
 
         print(1. == 1.00000000001)
 
-    test_5 = True
+    test_5 = False
     if test_5:
         curves = [
         UniversalConnectionCurve(Point2D(0e+0, 0e+0), Point2D(1e-3, 1e-3),
@@ -284,9 +266,13 @@ if __name__ == "__main__":
         UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 1),
                                       Angle(-math.atan(0.5)), Angle(math.pi-math.atan(0.5))),
         UniversalConnectionCurve(Point2D(0, 0), Point2D(2, 10),
-                                      Angle(-math.pi/2), Angle(math.pi/2))
+                                      Angle(-math.pi/2), Angle(math.pi/2)),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 1),
+                                      Angle(math.atan(0.5)), Angle(-0.5*math.pi)),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 0),
+                                      Angle(0), Angle(math.pi))
         ]
-        cc = curves[6]
+        cc = curves[8]
         optim_result = cc.optimize_curvature()
         cc.eval_dir_points(tuple(optim_result.x))
         print("optim_result", optim_result)
@@ -299,13 +285,36 @@ if __name__ == "__main__":
         curve.plot(100)
         plt.show()
 
-    test_6 = False
+    test_6 = True
     if test_6:
-        cc = UniversalConnectionCurve(Point2D(0, 0), Point2D(10, 10),
-                                      Angle(math.atan(0.5)), Angle(-0.5*math.pi-math.atan(0.5)))
-        cc.eval_dir_points((2.026, 7.129))
-        print(cc.max_k())
-        print(cc.k_f_t(0.5))
-        curve = bezier.Curve.from_nodes(cc.nodes_for_print())
-        curve.plot(100)
-        plt.show()
+        curves = [
+        UniversalConnectionCurve(Point2D(0e+0, 0e+0), Point2D(1e-3, 1e-3),
+                                      Angle(math.atan(0.5)), Angle(-0.5*math.pi-math.atan(0.5))),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 1),
+                                      Angle(math.atan(0.5)), Angle(-0.5*math.pi+math.atan(0.5))),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 1),
+                                      Angle(math.atan(0.5)), Angle(0)),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 1),
+                                      Angle(math.atan(0.5)), Angle(math.pi)),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 1),
+                                      Angle(math.atan(0.5)), Angle(math.pi+math.atan(0.5))),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 1),
+                                      Angle(-math.atan(0.5)), Angle(math.pi-math.atan(0.5))),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(2, 10),
+                                      Angle(-math.pi/2), Angle(math.pi/2)),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 1),
+                                      Angle(math.atan(0.5)), Angle(-0.5*math.pi)),
+        UniversalConnectionCurve(Point2D(0, 0), Point2D(1, 0),
+                                      Angle(0), Angle(math.pi))
+        ]
+        cc = curves[8]
+        if TIME_EVALUATION:
+            print("sum time float", cc.sum_time_float_eval)
+            print("sum time min", cc.sum_time_min_eval)
+        # cc.pnt_start = Point2D(0, 1)
+        cc.angle_end = Angle(math.atan(0.5))
+        cc.plot()
+
+        # curve = bezier.Curve.from_nodes(cc.nodes_for_print())
+        # curve.plot(100)
+        # plt.show()
