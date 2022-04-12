@@ -8,21 +8,21 @@ from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QMainWindow, QGraphic
     QGraphicsEllipseItem, QGraphicsItem, QGraphicsPolygonItem, QGraphicsSceneMouseEvent, QGraphicsTextItem, QWidget, \
     QStyleOptionGraphicsItem, QStyle
 from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetrics, QPainterPathStroker, QTransform, \
-    QRegion, QPainter
+    QRegion, QPainter, QWheelEvent, QResizeEvent
 from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
 
 from sympy import Point2D
 from graphic_numpy import Angle, angle_rad_difference, UniversalConnectionCurve
 
-POINTS_SIZE = 10
-THORN_WIDTH = 2  # 5
-THORN_LENGTH = 20  # 30
+POINTS_SIZE = 10  # 10
+THORN_WIDTH = 2  # 2
+THORN_LENGTH = 20  # 20
 
 THORN_LABEL_FONT_FAMILY = "times"
 THORN_LABEL_FONT_SIZE = 10
 THORN_LABEL_FONT = QFont(THORN_LABEL_FONT_FAMILY, THORN_LABEL_FONT_SIZE)
 
-H_CLICK_BEZIER = 6
+H_CLICK_BEZIER = 6  # 6
 
 
 class Ellips:
@@ -350,6 +350,7 @@ class CustomGC(QGraphicsScene):
         super().__init__(*args, **kwargs)
         self.setBackgroundBrush(QBrush(Qt.white))
         hp_1 = self.add_hp(200, 200, [45, 135, 270])
+        self.hp_1 = hp_1
         hp_2 = self.add_hp(300, 500, [0, 90, 180])
         cnct_12_22 = self.add_connector(hp_1, 2, hp_2, 2)
 
@@ -368,12 +369,87 @@ class CustomGC(QGraphicsScene):
         self.addItem(cnct.path_item)
         return cnct
 
+    def set_translation(self, dx, dy):
+        """  implement this because of QView translate bug in qt"""
+        old_sr = self.sceneRect()
+        new_sr = QRectF(old_sr.x() - dx, old_sr.y() - dy, old_sr.width(), old_sr.height())
+        self.setSceneRect(new_sr)
+
+    def set_zoom(self, z):
+        old_sr = self.sceneRect()
+        center_x, center_y = old_sr.x() + old_sr.width()/2, old_sr.y() + old_sr.height()/2
+        print("center x, y = ", center_x, center_y)
+        print("new width = ", old_sr.width() * z)
+        new_sr = QRectF(center_x - old_sr.width()/2 * z, center_y - old_sr.height()/2 * z,
+                        old_sr.width() * z, old_sr.height() * z)
+        self.setSceneRect(new_sr)
+
 
 class CustomView(QGraphicsView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.scale_level = 1
+        self.transform_ = QTransform()
+        # self.setTransform(self.transform_)
+        self.setMouseTracking(True)
+        # self.cent
+        self.center = QPointF(0, 0)
+        # self.setTransformationAnchor(QGraphicsView.NoAnchor)
+        # self.translate(500, 800)
         # self.rotate(-45)
+        # self.custom_translation(100 ,200)
+        # self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + 500)
+        # self.centerOn(200, 300)
         # self.scale(0.5, 0.5)
+        # self.setP
+        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+
+    def custom_translation(self, dx, dy):
+        scene: CustomGC = self.scene()
+        scene.set_translation(dx, dy)
+
+    def custom_zoom(self, z):
+        scene: CustomGC = self.scene()
+        scene.set_zoom(z)
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        elem_sc_factor = 1.1
+        print("event pos", event.pos())
+        diff_posit: QPointF = QPointF(event.pos())-self.center
+        delta = event.angleDelta().y()
+        hp: HedgehogPoint = self.scene().hp_1
+        print("center : ", hp.x_center, hp.y_center)
+        print("delta : ", diff_posit.x(), diff_posit.y())
+        if delta > 0:
+            print("> 0")
+            factor = (elem_sc_factor-1)  # (1-1/elem_sc_factor)   # * self.scale_level
+            transition = (-diff_posit.x() * factor, -diff_posit.y() * factor)
+            self.scale_level *= elem_sc_factor
+            self.custom_zoom(elem_sc_factor)
+            self.transform_.scale(elem_sc_factor, elem_sc_factor)
+        else:
+            print("< 0")
+            factor = (elem_sc_factor - 1)   # * self.scale_level
+            transition = (diff_posit.x() * factor, diff_posit.y() * factor)
+            self.scale_level /= elem_sc_factor
+            self.transform_.scale(1/elem_sc_factor, 1/elem_sc_factor)
+            self.custom_zoom(1/elem_sc_factor)
+        # print("scale factors", self.transform_.m11(), self.transform_.m22())
+        self.setTransform(self.transform_)
+        # print("view coords", self.mapFromScene(200, 200))
+
+        # self.centerOn(self.center.x(), self.center.y())
+        # self.transform_.translate(diff_posit.x(), diff_posit.y())
+        # self.custom_translation(-diff_posit.x(), -diff_posit.y())
+        # self.custom_translation(-diff_posit.x() * factor, -diff_posit.y() * factor)
+        # self.custom_translation(diff_posit.x() * factor, diff_posit.y() * factor)
+        print("wheelEvent", delta)
+
+    def window_resized(self, new_w, new_h):
+        self.center = QPointF(new_w/2, new_h/2)
+        print("center", self.center)
 
 
 class CustomMW(QMainWindow):
@@ -383,3 +459,8 @@ class CustomMW(QMainWindow):
         self.scene = CustomGC(0, 0, 1800, 900)
         self.view = CustomView(self.scene)
         self.setCentralWidget(self.view)
+
+    def resizeEvent(self, a0: QResizeEvent) -> None:
+        super().resizeEvent(a0)
+        self.view.window_resized(self.width(), self.height())
+        # print("window resize", self.width(), self.height())
