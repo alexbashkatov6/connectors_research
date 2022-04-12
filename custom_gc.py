@@ -25,6 +25,10 @@ THORN_LABEL_FONT = QFont(THORN_LABEL_FONT_FAMILY, THORN_LABEL_FONT_SIZE)
 H_CLICK_BEZIER = 6  # 6
 
 
+# translate view bug: https://bugreports.qt.io/browse/QTBUG-7328?jql=text%20~%20%22translate%22
+# https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QGraphicsView.html?highlight=setdragmode#PySide2.QtWidgets.PySide2.QtWidgets.QGraphicsView.setDragMode
+
+
 class Ellips:
     def __init__(self, x_center: int, y_center: int):
         self.x_center: int = x_center
@@ -369,20 +373,20 @@ class CustomGC(QGraphicsScene):
         self.addItem(cnct.path_item)
         return cnct
 
-    def set_translation(self, dx, dy):
-        """  implement this because of QView translate bug in qt"""
-        old_sr = self.sceneRect()
-        new_sr = QRectF(old_sr.x() - dx, old_sr.y() - dy, old_sr.width(), old_sr.height())
-        self.setSceneRect(new_sr)
-
-    def set_zoom(self, z):
-        old_sr = self.sceneRect()
-        center_x, center_y = old_sr.x() + old_sr.width()/2, old_sr.y() + old_sr.height()/2
-        print("center x, y = ", center_x, center_y)
-        print("new width = ", old_sr.width() * z)
-        new_sr = QRectF(center_x - old_sr.width()/2 * z, center_y - old_sr.height()/2 * z,
-                        old_sr.width() * z, old_sr.height() * z)
-        self.setSceneRect(new_sr)
+    # def set_translation(self, dx, dy):
+    #     """  implement this because of QView translate bug in qt"""
+    #     old_sr = self.sceneRect()
+    #     new_sr = QRectF(old_sr.x() - dx, old_sr.y() - dy, old_sr.width(), old_sr.height())
+    #     self.setSceneRect(new_sr)
+    #
+    # def set_zoom(self, z):
+    #     old_sr = self.sceneRect()
+    #     center_x, center_y = old_sr.x() + old_sr.width()/2, old_sr.y() + old_sr.height()/2
+    #     print("center x, y = ", center_x, center_y)
+    #     print("new width = ", old_sr.width() * z)
+    #     new_sr = QRectF(center_x - old_sr.width()/2 * z, center_y - old_sr.height()/2 * z,
+    #                     old_sr.width() * z, old_sr.height() * z)
+    #     self.setSceneRect(new_sr)
 
 
 class CustomView(QGraphicsView):
@@ -390,29 +394,27 @@ class CustomView(QGraphicsView):
         super().__init__(*args, **kwargs)
         self.scale_level = 1
         self.transform_ = QTransform()
-        # self.setTransform(self.transform_)
-        self.setMouseTracking(True)
-        # self.cent
+        # self.setMouseTracking(True)
         self.center = QPointF(0, 0)
-        # self.setTransformationAnchor(QGraphicsView.NoAnchor)
         # self.translate(500, 800)
         # self.rotate(-45)
         # self.custom_translation(100 ,200)
         # self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + 500)
         # self.centerOn(200, 300)
         # self.scale(0.5, 0.5)
-        # self.setP
         # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.translate(100, 200)
+        # self.setAlignment(Qt.Align)
 
-    def custom_translation(self, dx, dy):
-        scene: CustomGC = self.scene()
-        scene.set_translation(dx, dy)
-
-    def custom_zoom(self, z):
-        scene: CustomGC = self.scene()
-        scene.set_zoom(z)
+    # def custom_translation(self, dx, dy):
+    #     scene: CustomGC = self.scene()
+    #     scene.set_translation(dx, dy)
+    #
+    # def custom_zoom(self, z):
+    #     scene: CustomGC = self.scene()
+    #     scene.set_zoom(z)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         elem_sc_factor = 1.1
@@ -427,7 +429,7 @@ class CustomView(QGraphicsView):
             factor = (elem_sc_factor-1)  # (1-1/elem_sc_factor)   # * self.scale_level
             transition = (-diff_posit.x() * factor, -diff_posit.y() * factor)
             self.scale_level *= elem_sc_factor
-            self.custom_zoom(elem_sc_factor)
+            # self.custom_zoom(elem_sc_factor)
             self.transform_.scale(elem_sc_factor, elem_sc_factor)
         else:
             print("< 0")
@@ -435,7 +437,7 @@ class CustomView(QGraphicsView):
             transition = (diff_posit.x() * factor, diff_posit.y() * factor)
             self.scale_level /= elem_sc_factor
             self.transform_.scale(1/elem_sc_factor, 1/elem_sc_factor)
-            self.custom_zoom(1/elem_sc_factor)
+            # self.custom_zoom(1/elem_sc_factor)
         # print("scale factors", self.transform_.m11(), self.transform_.m22())
         self.setTransform(self.transform_)
         # print("view coords", self.mapFromScene(200, 200))
