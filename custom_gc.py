@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QMainWindow, QGraphic
     QGraphicsEllipseItem, QGraphicsItem, QGraphicsPolygonItem, QGraphicsSceneMouseEvent, QGraphicsTextItem, QWidget, \
     QStyleOptionGraphicsItem, QStyle
 from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetrics, QPainterPathStroker, QTransform, \
-    QRegion, QPainter, QWheelEvent, QResizeEvent
+    QRegion, QPainter, QWheelEvent, QResizeEvent, QMouseEvent
 from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
 
 from sympy import Point2D
@@ -352,6 +352,7 @@ class Connector:
 class CustomGC(QGraphicsScene):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # self.setSceneRect(-2000, -2000, 4000, 4000)
         self.setBackgroundBrush(QBrush(Qt.white))
         hp_1 = self.add_hp(200, 200, [45, 135, 270])
         self.hp_1 = hp_1
@@ -378,7 +379,7 @@ class CustomGC(QGraphicsScene):
     #     old_sr = self.sceneRect()
     #     new_sr = QRectF(old_sr.x() - dx, old_sr.y() - dy, old_sr.width(), old_sr.height())
     #     self.setSceneRect(new_sr)
-    #
+
     # def set_zoom(self, z):
     #     old_sr = self.sceneRect()
     #     center_x, center_y = old_sr.x() + old_sr.width()/2, old_sr.y() + old_sr.height()/2
@@ -404,21 +405,55 @@ class CustomView(QGraphicsView):
         # self.scale(0.5, 0.5)
         # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.translate(100, 200)
+        # self.translate(100, 200)
         # self.setAlignment(Qt.Align)
 
-    # def custom_translation(self, dx, dy):
-    #     scene: CustomGC = self.scene()
-    #     scene.set_translation(dx, dy)
-    #
-    # def custom_zoom(self, z):
-    #     scene: CustomGC = self.scene()
-    #     scene.set_zoom(z)
+        # self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.start_move = False
+        self.start_drag_position = QPointF(0, 0)
+
+        # self.setScr
+
+        # self.
+
+    def set_translation(self, dx, dy):
+        """  implement this because of QView translate bug in qt"""
+        print("size = ", self.size())
+        # start_hor_posit = self.horizontalScrollBar().value()
+        # start_ver_posit = self.verticalScrollBar().value()
+        old_sr = self.sceneRect()
+        new_sr = QRectF(old_sr.x() - dx, old_sr.y() - dy, old_sr.width(), old_sr.height())
+        self.setSceneRect(new_sr)
+        print("trans rect = ", new_sr)
+        # self.horizontalScrollBar().setValue(start_hor_posit)
+        # self.verticalScrollBar().setValue(start_ver_posit)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        super().mousePressEvent(event)
+        if event.button() == Qt.MiddleButton:
+            print("mid button")
+            self.start_move = True
+            self.start_drag_position = event.pos()
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        super(CustomView, self).mouseMoveEvent(event)
+        if self.start_move:
+            print("mid button move")
+            pos = event.pos()
+            self.set_translation((pos.x()-self.start_drag_position.x())/self.scale_level,
+                                 (pos.y()-self.start_drag_position.y())/self.scale_level)
+            self.start_drag_position = pos
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        super(CustomView, self).mouseReleaseEvent(event)
+        self.start_move = False
+        print("mid button release")
 
     def wheelEvent(self, event: QWheelEvent) -> None:
+        # start_hor_posit = self.horizontalScrollBar().value()
+        # start_ver_posit = self.verticalScrollBar().value()
         elem_sc_factor = 1.1
-        print("event pos", event.pos())
+        print("event pos", event.pos())  # , event.globalPos()
         diff_posit: QPointF = QPointF(event.pos())-self.center
         delta = event.angleDelta().y()
         hp: HedgehogPoint = self.scene().hp_1
@@ -426,8 +461,9 @@ class CustomView(QGraphicsView):
         print("delta : ", diff_posit.x(), diff_posit.y())
         if delta > 0:
             print("> 0")
-            factor = (elem_sc_factor-1)  # (1-1/elem_sc_factor)   # * self.scale_level
+            factor = (1-1/elem_sc_factor)  # (elem_sc_factor-1)   # * self.scale_level
             transition = (-diff_posit.x() * factor, -diff_posit.y() * factor)
+            self.set_translation(transition[0], transition[1])
             self.scale_level *= elem_sc_factor
             # self.custom_zoom(elem_sc_factor)
             self.transform_.scale(elem_sc_factor, elem_sc_factor)
@@ -435,6 +471,7 @@ class CustomView(QGraphicsView):
             print("< 0")
             factor = (elem_sc_factor - 1)   # * self.scale_level
             transition = (diff_posit.x() * factor, diff_posit.y() * factor)
+            self.set_translation(transition[0], transition[1])
             self.scale_level /= elem_sc_factor
             self.transform_.scale(1/elem_sc_factor, 1/elem_sc_factor)
             # self.custom_zoom(1/elem_sc_factor)
@@ -447,6 +484,9 @@ class CustomView(QGraphicsView):
         # self.custom_translation(-diff_posit.x(), -diff_posit.y())
         # self.custom_translation(-diff_posit.x() * factor, -diff_posit.y() * factor)
         # self.custom_translation(diff_posit.x() * factor, diff_posit.y() * factor)
+
+        # self.horizontalScrollBar().setValue(start_hor_posit)
+        # self.verticalScrollBar().setValue(start_ver_posit)
         print("wheelEvent", delta)
 
     def window_resized(self, new_w, new_h):
@@ -458,8 +498,10 @@ class CustomMW(QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setGeometry(40, 40, 1840, 980)
-        self.scene = CustomGC(0, 0, 1800, 900)
+        self.scene = CustomGC()  # 0, 0, 1800, 900  -2000, -2000, 4000, 4000
         self.view = CustomView(self.scene)
+        # self.view.setSceneRect(0, 0, 1800, 900)
+        self.view.setSceneRect(0, 0, 1, 1)
         self.setCentralWidget(self.view)
 
     def resizeEvent(self, a0: QResizeEvent) -> None:
