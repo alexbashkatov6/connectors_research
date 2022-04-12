@@ -11,19 +11,18 @@ from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetri
     QRegion, QPainter
 from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
 
-# from graphical_object import Angle, angle_rad_difference, BoundedCurve, Point2D, CECurveType
 from sympy import Point2D
 from graphic_numpy import Angle, angle_rad_difference, UniversalConnectionCurve
 
-POINTS_SIZE = 40
-THORN_WIDTH = 5  # 5
-THORN_LENGTH = 30  # 30
+POINTS_SIZE = 10
+THORN_WIDTH = 2  # 5
+THORN_LENGTH = 20  # 30
 
 THORN_LABEL_FONT_FAMILY = "times"
 THORN_LABEL_FONT_SIZE = 10
 THORN_LABEL_FONT = QFont(THORN_LABEL_FONT_FAMILY, THORN_LABEL_FONT_SIZE)
 
-H_CLICK_BEZIER = 20
+H_CLICK_BEZIER = 6
 
 
 class Ellips:
@@ -125,7 +124,6 @@ class HedgehogGraphicsPathItem(QGraphicsPathItem):
         super().__init__()
         self.base_hp = base_hp
         self.start_pos = None
-        # self.scenePos()
 
     def setPath(self, path: QPainterPath) -> None:
         super().setPath(path)
@@ -175,7 +173,6 @@ class HedgehogPoint:
         self.set_view_properties()
 
     def moved(self, x0, y0, x_new, y_new):
-        # print("moved", x0, y0, x_new, y_new)
         for cnct_cond in self.connectors:
             cnct, start_or_end = cnct_cond
             if start_or_end == "start":
@@ -296,6 +293,7 @@ class Connector:
         self._start_cond = start_cond
         self._end_cond = end_cond
         self._path_item = ShapedQGraphicsPathItem()
+        self._path_item.setZValue(-10)
         self._base_path = QPainterPath()
         self.evaluate_path()
         self.set_view_properties()
@@ -310,7 +308,6 @@ class Connector:
 
     @start_cond.setter
     def start_cond(self, val):
-        # print("start_cond val =", val)
         self._start_cond = val
         self.evaluate_path()
 
@@ -320,7 +317,6 @@ class Connector:
 
     @end_cond.setter
     def end_cond(self, val):
-        # print("end_cond val =", val)
         self._end_cond = val
         self.evaluate_path()
 
@@ -353,11 +349,9 @@ class CustomGC(QGraphicsScene):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setBackgroundBrush(QBrush(Qt.white))
-        # self.hp_list = []
-        # self.cnct_list = []
         hp_1 = self.add_hp(200, 200, [45, 135, 270])
         hp_2 = self.add_hp(300, 500, [0, 90, 180])
-        cnct_12_22 = self.add_connector(hp_1, 1, hp_2, 2)
+        cnct_12_22 = self.add_connector(hp_1, 2, hp_2, 2)
 
     def add_hp(self, x, y, angles) -> HedgehogPoint:
         hp = HedgehogPoint(x, y, angles)
@@ -372,9 +366,6 @@ class CustomGC(QGraphicsScene):
         hp1.connectors.append((cnct, "start"))
         hp2.connectors.append((cnct, "end"))
         self.addItem(cnct.path_item)
-        # cnct.start_cond = ConnectCondition(hp1.x_center, hp1.y_center, hp1.angles[1])
-        # print("cnct", cnct.start_cond, cnct.end_cond)
-        # cnct.path_item.re
         return cnct
 
 
