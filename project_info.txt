@@ -1,0 +1,4 @@
+# translate view bug: https://bugreports.qt.io/browse/QTBUG-7328?jql=text%20~%20%22translate%22
+# https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QGraphicsView.html?highlight=setdragmode#PySide2.QtWidgets.PySide2.QtWidgets.QGraphicsView.setDragMode
+
+# bezier code example: https://github.com/reiniscimurs/Bezier-Curve/commit/ee845f740261dd7a923b85c5e23173c9cdf7fcf6

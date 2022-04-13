@@ -14,7 +14,6 @@ import time
 
 from cubic_curvature import deltas_optimization
 
-# code example: https://github.com/reiniscimurs/Bezier-Curve/commit/ee845f740261dd7a923b85c5e23173c9cdf7fcf6
 
 
 # class Point2D:

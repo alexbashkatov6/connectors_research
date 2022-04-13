@@ -23,10 +23,7 @@ THORN_LABEL_FONT_SIZE = 10
 THORN_LABEL_FONT = QFont(THORN_LABEL_FONT_FAMILY, THORN_LABEL_FONT_SIZE)
 
 H_CLICK_BEZIER = 6  # 6
-
-
-# translate view bug: https://bugreports.qt.io/browse/QTBUG-7328?jql=text%20~%20%22translate%22
-# https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QGraphicsView.html?highlight=setdragmode#PySide2.QtWidgets.PySide2.QtWidgets.QGraphicsView.setDragMode
+ZOOM_COEFFICIENT = 1.1  # 1.1
 
 
 class Ellips:
@@ -42,10 +39,11 @@ class Ellips:
     def path_item(self):
         return self._path_item
 
-    def evaluate_path(self):
+    def evaluate_path(self, scale_factor: float = 1):
         self._base_path.clear()
-        self._base_path.addEllipse(QRectF(self.x_center - POINTS_SIZE/2, self.y_center - POINTS_SIZE/2,
-                                          POINTS_SIZE, POINTS_SIZE))
+        points_size = POINTS_SIZE/scale_factor
+        self._base_path.addEllipse(QRectF(self.x_center - points_size/2, self.y_center - points_size/2,
+                                          points_size, points_size))
         self.path_item.setPath(self._base_path)
 
     def set_view_properties(self):
@@ -53,6 +51,9 @@ class Ellips:
 
     def path(self):
         return self._base_path
+
+    def scaled_redraw(self, scale_factor: float):
+        self.evaluate_path(scale_factor)
 
 
 class Thorn:
@@ -71,10 +72,11 @@ class Thorn:
     def path_item(self):
         return self._path_item
 
-    def evaluate_path(self):
+    def evaluate_path(self, scale_factor: float = 1):
         self._base_path.clear()
-        self.x_end = self.x_start + math.cos(math.radians(-self.angle)) * THORN_LENGTH
-        self.y_end = self.y_start + math.sin(math.radians(-self.angle)) * THORN_LENGTH
+        th_length = THORN_LENGTH/scale_factor
+        self.x_end = self.x_start + math.cos(math.radians(-self.angle)) * th_length
+        self.y_end = self.y_start + math.sin(math.radians(-self.angle)) * th_length
         poly = QPolygonF(
                 [
                     QPointF(self.x_start, self.y_start),
@@ -83,14 +85,19 @@ class Thorn:
         self._base_path.addPolygon(poly)
         self.path_item.setPath(self._base_path)
 
-    def set_view_properties(self):
+    def set_view_properties(self, scale_factor: float = 1):
         pen = QPen(Qt.black)
-        pen.setWidthF(THORN_WIDTH)
+        th_width = THORN_WIDTH/scale_factor
+        pen.setWidthF(th_width)
         self.path_item.setPen(pen)
         self.path_item.setBrush(QBrush(Qt.black))
 
     def path(self):
         return self._base_path
+
+    def scaled_redraw(self, scale_factor: float):
+        self.evaluate_path(scale_factor)
+        self.set_view_properties(scale_factor)
 
 
 class ThornLabel:
@@ -107,10 +114,11 @@ class ThornLabel:
     def path_item(self):
         return self._path_item
 
-    def evaluate_path(self):
+    def evaluate_path(self, scale_factor: float = 1):
         self._base_path.clear()
         point = QPointF(self.x, self.y)
-        font = THORN_LABEL_FONT
+        font_size = THORN_LABEL_FONT_SIZE/scale_factor
+        font = QFont(THORN_LABEL_FONT_FAMILY, font_size)
         text = str(self.num)
         self._base_path.addText(point, font, text)
         self.path_item.setPath(self._base_path)
@@ -121,6 +129,9 @@ class ThornLabel:
     def path(self):
         return self._base_path
 
+    def scaled_redraw(self, scale_factor: float):
+        self.evaluate_path(scale_factor)
+
 
 class HedgehogGraphicsPathItem(QGraphicsPathItem):
 
@@ -128,6 +139,7 @@ class HedgehogGraphicsPathItem(QGraphicsPathItem):
         super().__init__()
         self.base_hp = base_hp
         self.start_pos = None
+        # self.setFlag(QGraphicsItem.ItemIgnoresTransformations)
 
     def setPath(self, path: QPainterPath) -> None:
         super().setPath(path)
@@ -174,6 +186,7 @@ class HedgehogPoint:
         assert len(self.angles) <= 3
         self.ellipse = None
         self.thorns = []
+        self.thorn_labels = []
         self._path_item = HedgehogGraphicsPathItem(self)
         self._base_path = QPainterPath()
         self.evaluate_path()
@@ -197,28 +210,35 @@ class HedgehogPoint:
     def path_item(self):
         return self._path_item
 
-    def evaluate_path(self):
+    def evaluate_path(self, scale_factor: float = 1):
         self._base_path.clear()
+        self.thorns.clear()
+        self.thorn_labels.clear()
+        for item in self.path_item.childItems():
+            item.setParentItem(None)
 
         ellipse = Ellips(self.x_center, self.y_center)
         ellipse.path_item.setParentItem(self.path_item)
+        ellipse.scaled_redraw(scale_factor)
         self.ellipse = ellipse
-        self._base_path.addPath(ellipse.path())
+        self._base_path.addPath(self.ellipse.path())
 
         for angle in self.angles:
             thorn = Thorn(self.x_center, self.y_center, angle)
             thorn.path_item.setParentItem(self.path_item)
+            thorn.scaled_redraw(scale_factor)
             self.thorns.append(thorn)
             self.thorn_ends.append((thorn.x_end, thorn.y_end))
             self._base_path.addPath(thorn.path())
 
-        self.evaluate_thorn_labels()
+        self.evaluate_thorn_labels(scale_factor)
         self.path_item.setPath(self._base_path)
 
     def set_view_properties(self):
         self.path_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        #  | QGraphicsItem.ItemIgnoresTransformations
 
-    def evaluate_thorn_labels(self):
+    def evaluate_thorn_labels(self, scale_factor: float):
         """ if distance between two rays less then mean, label should be placed outside this angle """
         sizes = []
         widths = []
@@ -228,7 +248,7 @@ class HedgehogPoint:
         differences = []
 
         """ Stage 1. Differences """
-        fm = QFontMetrics(THORN_LABEL_FONT)
+        fm = QFontMetrics(QFont(THORN_LABEL_FONT_FAMILY, THORN_LABEL_FONT_SIZE/scale_factor))
         for i, angle in enumerate(self.angles):
             br = fm.boundingRect(str(i))
             w = br.width()
@@ -267,8 +287,18 @@ class HedgehogPoint:
             corners.append((center[0]-widths[i]/2, center[1]+heights[i]/2))
         for i, corner in enumerate(corners):
             tl = ThornLabel(*corner, i)
-            self._base_path.addPath(tl.path())
+            tl.scaled_redraw(scale_factor)
             tl.path_item.setParentItem(self.path_item)
+            self._base_path.addPath(tl.path())
+            self.thorn_labels.append(tl)
+
+    def scaled_redraw(self, scale_factor: float):
+        for th in self.thorns:
+            th.scaled_redraw(scale_factor)
+        for tl in self.thorn_labels:
+            tl.scaled_redraw(scale_factor)
+        self.ellipse.scaled_redraw(scale_factor)
+        self.evaluate_path(scale_factor)
 
 
 @dataclass
@@ -285,6 +315,7 @@ class ShapedQGraphicsPathItem(QGraphicsPathItem):
         ps = QPainterPathStroker()
         ps.setWidth(40)
         self._outshape = ps.createStroke(path)
+        # self.setFlag(QGraphicsItem.ItemIgnoresTransformations)
 
     def shape(self) -> QPainterPath:
         return self._outshape
@@ -342,14 +373,17 @@ class Connector:
                                 QPointF(self.end_cond.x, self.end_cond.y))
         self.path_item.setPath(self._base_path)
 
-    def set_view_properties(self):
+    def set_view_properties(self, scale_factor: float = 1):
         pen = QPen(Qt.black)
-        pen.setWidthF(THORN_WIDTH)
+        pen.setWidthF(THORN_WIDTH/scale_factor)
         self.path_item.setPen(pen)
         self.path_item.setFlags(QGraphicsItem.ItemIsSelectable)  # QGraphicsItem.ItemIsMovable |
 
     def path(self):
         return self._base_path
+
+    def scaled_redraw(self, scale_factor: float):
+        self.set_view_properties(scale_factor)
 
 
 class CustomGC(QGraphicsScene):
@@ -357,6 +391,8 @@ class CustomGC(QGraphicsScene):
         super().__init__(*args, **kwargs)
         self.setSceneRect(0, 0, 4, 4)
         self.setBackgroundBrush(QBrush(Qt.white))
+        self.hps = []
+        self.connects = []
         hp_1 = self.add_hp(200, 200, [45, 135, 270])
         self.hp_1 = hp_1
         hp_2 = self.add_hp(300, 500, [0, 90, 180])
@@ -365,6 +401,7 @@ class CustomGC(QGraphicsScene):
     def add_hp(self, x, y, angles) -> HedgehogPoint:
         hp = HedgehogPoint(x, y, angles)
         self.addItem(hp.path_item)
+        self.hps.append(hp)
         return hp
 
     def add_connector(self, hp1: HedgehogPoint, num_point_1: int,
@@ -375,7 +412,14 @@ class CustomGC(QGraphicsScene):
         hp1.connectors.append((cnct, "start"))
         hp2.connectors.append((cnct, "end"))
         self.addItem(cnct.path_item)
+        self.connects.append(cnct)
         return cnct
+
+    def const_geom_obj_redraw(self, scale_factor: float):
+        for hp in self.hps:
+            hp.scaled_redraw(scale_factor)
+        for cnct in self.connects:
+            cnct.scaled_redraw(scale_factor)
 
 
 class CustomView(QGraphicsView):
@@ -411,7 +455,7 @@ class CustomView(QGraphicsView):
         self.start_move = False
 
     def wheelEvent(self, event: QWheelEvent) -> None:
-        elem_sc_factor = 1.1
+        elem_sc_factor = ZOOM_COEFFICIENT
         diff_posit: QPointF = QPointF(event.pos())-self.center
         delta = event.angleDelta().y()
         if delta > 0:
@@ -428,6 +472,11 @@ class CustomView(QGraphicsView):
             self.transform_.scale(1/elem_sc_factor, 1/elem_sc_factor)
         self.setTransform(self.transform_)
         self.set_translation(transition[0], transition[1])
+        self.const_geom_obj_redraw()
+
+    def const_geom_obj_redraw(self):
+        # pass
+        self.scene().const_geom_obj_redraw(self.scale_level)
 
     def window_resized(self, new_w, new_h):
         self.center = QPointF(new_w/2, new_h/2)
