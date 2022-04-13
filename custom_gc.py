@@ -145,18 +145,21 @@ class HedgehogGraphicsPathItem(QGraphicsPathItem):
 
     def mousePressEvent(self, e: QGraphicsSceneMouseEvent):
         super().mousePressEvent(e)
-        self.start_pos = e.scenePos()
+        if e.button() == Qt.LeftButton:
+            self.start_pos = e.scenePos()
 
     def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent):
         super().mouseReleaseEvent(e)
-        self.start_pos = None
+        if e.button() == Qt.LeftButton:
+            self.start_pos = None
 
     def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent):
+        if e.buttons() == Qt.LeftButton:
+            start_pos = self.start_pos
+            end_pos = e.scenePos()
+            self.start_pos = e.scenePos()
+            self.base_hp.moved(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
         super().mouseMoveEvent(e)
-        start_pos = self.start_pos
-        end_pos = e.scenePos()
-        self.start_pos = e.scenePos()
-        self.base_hp.moved(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
 
 
 class HedgehogPoint:
@@ -374,51 +377,17 @@ class CustomGC(QGraphicsScene):
         self.addItem(cnct.path_item)
         return cnct
 
-    # def set_translation(self, dx, dy):
-    #     """  implement this because of QView translate bug in qt"""
-    #     old_sr = self.sceneRect()
-    #     new_sr = QRectF(old_sr.x() - dx, old_sr.y() - dy, old_sr.width(), old_sr.height())
-    #     self.setSceneRect(new_sr)
-
-    # def set_zoom(self, z):
-    #     old_sr = self.sceneRect()
-    #     center_x, center_y = old_sr.x() + old_sr.width()/2, old_sr.y() + old_sr.height()/2
-    #     print("center x, y = ", center_x, center_y)
-    #     print("new width = ", old_sr.width() * z)
-    #     new_sr = QRectF(center_x - old_sr.width()/2 * z, center_y - old_sr.height()/2 * z,
-    #                     old_sr.width() * z, old_sr.height() * z)
-    #     self.setSceneRect(new_sr)
-
 
 class CustomView(QGraphicsView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.scale_level = 1
-        self.sub_scale_level = 1
         self.transform_ = QTransform()
         # self.setMouseTracking(True)
-        # self.center = QPointF(0, 0)
-        # self.translate(500, 800)
-        # self.rotate(-45)
-        # self.custom_translation(100 ,200)
-        # self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + 500)
-        # self.centerOn(200, 300)
-        # self.scale(0.5, 0.5)
-        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.translate(100, 200)
-        # self.setAlignment(Qt.Align)
-
-        # self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.start_move = False
-        self.start_drag_position = QPointF(0, 0)
-
-        # self.setScr
-
-        # self.
 
     def set_translation(self, dx, dy):
-        """  implement this because of QView translate bug in qt"""
+        """  implement this because of QView translate bug in qt QTBUG-7328 https://bugreports.qt.io/"""
         old_sr = self.sceneRect()
         new_sr = QRectF(old_sr.x() - dx, old_sr.y() - dy, old_sr.width(), old_sr.height())
         self.setSceneRect(new_sr)
@@ -470,7 +439,6 @@ class CustomMW(QMainWindow):
         self.setGeometry(40, 40, 1840, 980)
         self.scene = CustomGC()  # 0, 0, 1800, 900  -2000, -2000, 4000, 4000
         self.view = CustomView(self.scene)
-        # self.view.setSceneRect(0, 0, 1800, 900)
         self.view.setSceneRect(0, 0, 1, 1)
         self.view.window_resized(self.width(), self.height())
         self.setCentralWidget(self.view)
@@ -478,4 +446,3 @@ class CustomMW(QMainWindow):
     def resizeEvent(self, a0: QResizeEvent) -> None:
         super().resizeEvent(a0)
         self.view.window_resized(self.width(), self.height())
-        # print("window resize", self.width(), self.height())
