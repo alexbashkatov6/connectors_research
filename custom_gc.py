@@ -1,12 +1,14 @@
 from __future__ import annotations
 from copy import copy
+from numbers import Real
+from collections import defaultdict
 from typing import Optional
 import math
 from dataclasses import dataclass
 
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QMainWindow, QGraphicsPathItem, QGraphicsRectItem, \
     QGraphicsEllipseItem, QGraphicsItem, QGraphicsPolygonItem, QGraphicsSceneMouseEvent, QGraphicsTextItem, QWidget, \
-    QStyleOptionGraphicsItem, QStyle
+    QStyleOptionGraphicsItem, QStyle, QGraphicsItemGroup
 from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetrics, QPainterPathStroker, QTransform, \
     QRegion, QPainter, QWheelEvent, QResizeEvent, QMouseEvent
 from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
@@ -24,6 +26,61 @@ THORN_LABEL_FONT = QFont(THORN_LABEL_FONT_FAMILY, THORN_LABEL_FONT_SIZE)
 
 H_CLICK_BEZIER = 6  # 6
 ZOOM_COEFFICIENT = 1.1  # 1.1
+
+
+def bounded_scale_function(scale: Real, base_scale: Real = 1) -> float:
+    assert float(base_scale) > 0
+    return float(scale) if scale <= base_scale else float(base_scale)
+
+
+class Parameter:
+    def __init__(self, in_value: Real):
+        self.in_value = in_value
+        self._out_value = float(in_value)
+        self._scale = 1
+
+    @property
+    def scale(self) -> float:
+        return self._scale
+
+    @scale.setter
+    def scale(self, val: float) -> None:
+        self._scale = val
+
+    @property
+    def out_value(self) -> float:
+        return self._out_value
+
+
+class UnScalableParameter(Parameter):
+    def __init__(self, in_value: Real):
+        super().__init__(in_value)
+        self._out_value = bounded_scale_function(in_value)
+
+
+class BoundScalableParameter(Parameter):
+    def __init__(self, in_value: Real):
+        super().__init__(in_value)
+        self._out_value = bounded_scale_function(in_value)
+
+
+class ScalableParameter(Parameter):
+    pass
+
+
+class BaseHalfScalableItem:
+    pass
+
+
+class ElementaryCustomItem(QGraphicsItem):
+    pass
+
+
+# class CompoundCustomItem(QGraphicsItemGroup, BaseCustomItem):
+#     def __init__(self):
+#         super(CompoundCustomItem, self).__init__()
+#         self.child_items: defaultdict[BaseCustomItem, list] = defaultdict(list)
+        # self.childItems()
 
 
 class Ellips:
