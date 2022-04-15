@@ -244,8 +244,8 @@ class HedgehogPoint:
         self.ellipse = None
         self.thorns = []
         self.thorn_labels = []
-        self._path_item = HedgehogGraphicsPathItem(self)
-        self._base_path = QPainterPath()
+        self._path_item = HedgehogGraphicsPathItem(self)  # element for parent-child relations
+        self._base_path = QPainterPath()  # element for clickable area evaluations
         self.evaluate_path()
         self.set_view_properties()
 
