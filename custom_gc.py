@@ -15,6 +15,7 @@ from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
 
 from sympy import Point2D
 from graphic_numpy import Angle, angle_rad_difference, UniversalConnectionCurve
+from custom_enum import CustomEnum
 
 POINTS_SIZE = 10  # 10
 THORN_WIDTH = 2  # 2
