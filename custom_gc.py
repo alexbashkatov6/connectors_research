@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QMainWindow, QGraphicsPathItem, QGraphicsRectItem, \
     QGraphicsEllipseItem, QGraphicsItem, QGraphicsPolygonItem, QGraphicsSceneMouseEvent, QGraphicsTextItem, QWidget, \
-    QStyleOptionGraphicsItem, QStyle, QGraphicsItemGroup
+    QStyleOptionGraphicsItem, QStyle, QGraphicsItemGroup, QGraphicsSceneWheelEvent
 from PyQt5.QtGui import QPen, QBrush, QPolygonF, QPainterPath, QFont, QFontMetrics, QPainterPathStroker, QTransform, \
     QRegion, QPainter, QWheelEvent, QResizeEvent, QMouseEvent
 from PyQt5.QtCore import Qt, QRectF, QLineF, QPointF
@@ -446,7 +446,7 @@ class Connector:
 class CustomGC(QGraphicsScene):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setSceneRect(0, 0, 4, 4)
+        # self.setSceneRect(0, 0, 4, 4)
         self.setBackgroundBrush(QBrush(Qt.white))
         self.hps = []
         self.connects = []
@@ -543,12 +543,20 @@ class CustomMW(QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setGeometry(40, 40, 1840, 980)
+
         self.scene = CustomGC()  # 0, 0, 1800, 900  -2000, -2000, 4000, 4000
         self.view = CustomView(self.scene)
         self.view.setSceneRect(0, 0, 1, 1)
         self.view.window_resized(self.width(), self.height())
+
+        # self.scene = C2Scene()  # 0, 0, 1800, 900  -2000, -2000, 4000, 4000
+        # self.view = C2View(self.scene)
+
         self.setCentralWidget(self.view)
 
     def resizeEvent(self, a0: QResizeEvent) -> None:
         super().resizeEvent(a0)
         self.view.window_resized(self.width(), self.height())
+
+    # def wheelEvent(self, a0: QWheelEvent) -> None:
+    #     pass

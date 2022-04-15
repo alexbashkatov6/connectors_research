@@ -1,0 +1,81 @@
+
+class C2Scene(QGraphicsScene):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.base_rect_item = QGraphicsRectItem(0, 0, 100, 100)
+        self.addItem(self.base_rect_item)
+        ellips_item = QGraphicsEllipseItem(10, 50, 100, 200)
+        self.addItem(ellips_item)
+        rect_item = QGraphicsRectItem(0, 0, 2000, 1000)
+        self.addItem(rect_item)
+        self.start_move = False
+        # print("self rect", self.sceneRect())
+
+    # def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+    #     print("scene event", event)
+    #     print("preess")
+    #     super().mousePressEvent(event)
+    #     if event.button() == Qt.MiddleButton:
+    #         self.start_move = True
+    #         self.start_drag_position = event.scenePos()
+
+    # def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+    #     print("event", event)
+    #     print("preess")
+    #     super().mousePressEvent(event)
+    #     if event.button() == Qt.MiddleButton:
+    #         self.start_move = True
+    #         self.start_drag_position = event.scenePos()
+    #
+    # def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+    #     super().mouseMoveEvent(event)
+    #     print("move")
+    #     if self.start_move:
+    #         pos = event.scenePos()
+    #         self.set_translation((pos.x()-self.start_drag_position.x()),  # /self.scale_level
+    #                              (pos.y()-self.start_drag_position.y()))
+    #         self.start_drag_position = pos
+    #
+    # def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+    #     super().mouseReleaseEvent(event)
+    #     self.start_move = False
+    #
+    # def set_translation(self, dx, dy):
+    #     """  implement this because of QView translate bug in qt QTBUG-7328 https://bugreports.qt.io/"""
+    #     old_sr = self.sceneRect()
+    #     new_sr = QRectF(old_sr.x() - dx, old_sr.y() - dy, old_sr.width(), old_sr.height())
+    #     self.setSceneRect(new_sr)
+
+
+class C2View(QGraphicsView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.scale_level = 1
+        # zoom = 1
+        # self.scale(zoom, zoom)
+        # self.centerOn(self.scene().base_rect_item)
+        # self.setSceneRect(0, 0, 1, 1)
+
+        self.horizontalScrollBar().blockSignals(True)
+        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.verticalScrollBar().blockSignals(True)
+        # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+
+        # self.setInteractive(True)
+        # self.setDragMode(QGraphicsView.RubberBandDrag)
+
+    def wheelEvent(self, event: QGraphicsSceneWheelEvent) -> None:
+        # super().wheelEvent(event)
+    #     print("pos = ", event.pos())
+    #     print("scenePos = ", event.scenePos())
+    #     print("screenPos = ", event.screenPos())
+        delta = event.angleDelta().y()
+    #     print("delta", delta)
+        zoom = 1.1
+        if delta > 0:
+            self.scale_level *= zoom
+            self.scale(zoom, zoom)
+        else:
+            self.scale_level /= zoom
+            self.scale(1/zoom, 1/zoom)
