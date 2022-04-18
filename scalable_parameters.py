@@ -328,12 +328,14 @@ if __name__ == "__main__":
         # print(cv.coords_of_view_point_in_cs(Point2D(18, 18), cs_1))
         # print(cs_base.all_children())
 
+        cv.relative_zoom(Point2D(0, 0), 2)
         print("positions before cs_base = {}, \n cs_1 = {}, \n cs_2 = {}, \n cs_3 = {}, \n cs_4 = {}, \n cs_5 = {}".format(cv.cs_view_position(cs_base),
                                                                                                cv.cs_view_position(cs_1),
                                                                                                cv.cs_view_position(cs_2),
                                                                                                cv.cs_view_position(cs_3),
                                                                                                cv.cs_view_position(cs_4),
                                                                                                cv.cs_view_position(cs_5)))
+        print("cs_1 before", cs_1.absolute_scene_position)
         cv.move_cs(cs_1, Point2D(0, 0), Point2D(1, 2))
 
         print("positions after cs_base = {}, \n cs_1 = {}, \n cs_2 = {}, \n cs_3 = {}, \n cs_4 = {}, \n cs_5 = {}".format(cv.cs_view_position(cs_base),
@@ -342,3 +344,4 @@ if __name__ == "__main__":
                                                                                                cv.cs_view_position(cs_3),
                                                                                                cv.cs_view_position(cs_4),
                                                                                                cv.cs_view_position(cs_5)))
+        print("cs_1 efter", cs_1.absolute_scene_position)
