@@ -489,7 +489,7 @@ class CustomView(QGraphicsView):
         self.start_move = False
 
     def set_translation(self, dx, dy):
-        """  implement this because of QView translate bug in qt QTBUG-7328 https://bugreports.qt.io/"""
+        """  implement this because of QView translate_view bug in qt QTBUG-7328 https://bugreports.qt.io/"""
         old_sr = self.sceneRect()
         new_sr = QRectF(old_sr.x() - dx, old_sr.y() - dy, old_sr.width(), old_sr.height())
         self.setSceneRect(new_sr)

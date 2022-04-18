@@ -79,3 +79,13 @@ class C2View(QGraphicsView):
         else:
             self.scale_level /= zoom
             self.scale(1/zoom, 1/zoom)
+
+
+        # rel: RelativePlacement = self.relative_scene_position
+        # parent_abs: RelativePlacement = self.parent_cs.absolute_scene_position
+        # x = parent_abs.x + math.cos(parent_abs.angle) * rel.x - math.sin(parent_abs.angle) * rel.y * bool_to_plus_minus_1(parent_abs.direct_orientation)
+        # y = parent_abs.y + math.sin(parent_abs.angle) * rel.x + math.cos(parent_abs.angle) * rel.y * bool_to_plus_minus_1(parent_abs.direct_orientation)
+        # angle = parent_abs.angle + rel.angle * bool_to_plus_minus_1(parent_abs.direct_orientation)
+        # direct_orientation = plus_minus_1_to_bool(bool_to_plus_minus_1(parent_abs.direct_orientation) * \
+        #                                           bool_to_plus_minus_1(rel.direct_orientation))
+        # return RelativePlacement(x, y, angle, direct_orientation)
