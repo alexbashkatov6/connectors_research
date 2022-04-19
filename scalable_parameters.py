@@ -127,13 +127,6 @@ class ScalableParameter:
             assert False
 
 
-# @dataclass
-# class RelativePlacement:
-#     x: Real = 0
-#     y: Real = 0
-#     angle: Real = 0
-#     reversed_orientation: bool = False  # if y-axis is reversed
-
 def bool_to_plus_minus_1(b: bool) -> int:
     return 1 if b else -1
 
@@ -163,20 +156,6 @@ class RelativePlacement:
         angle = -self.angle * dir_coef
         dir_or = self.direct_orientation
         return RelativePlacement(x, y, angle, dir_or)
-
-
-# class LocalCsPlacement(CustomEnum):
-#     center = 0
-#     tangent = 1
-#     corner = 2
-
-
-""" 2 main cs:
-
-    1. for build - scene cs
-    2. for view - corner cs
-
-"""
 
 
 def absolute_rp(base_cs_absolute_rp: RelativePlacement, local_rp_: RelativePlacement, scale_in_base_cs: Real = 1):
@@ -262,9 +241,6 @@ class SceneCSView:
     def move_cs(self, cs: SceneCS, start_point_view_coords: Point2D, end_point_view_coords: Point2D):
         parent_cs = cs.parent_cs
         old_rel_params = cs.relative_scene_position.params
-        # delta_x = float(end_point_view_coords.x) - float(start_point_view_coords.x)
-        # delta_y = float(end_point_view_coords.y) - float(start_point_view_coords.y)
-        # print("delta xy", delta_x, delta_y)
         pnt_start_move_in_parent_cs = self.coords_of_view_point_in_cs(start_point_view_coords, parent_cs)
         pnt_end_move_in_parent_cs = self.coords_of_view_point_in_cs(end_point_view_coords, parent_cs)
         new_x = old_rel_params[0] + float(pnt_end_move_in_parent_cs.x) - float(pnt_start_move_in_parent_cs.x)
@@ -290,9 +266,6 @@ class Ring(Primitive):
 
     def to_gr_item(self, rp: RelativePlacement, scale: Real):
         pass
-
-# , coord: RelativePlacement = None
-# , place_cs: LocalCsPlacement = LocalCsPlacement(LocalCsPlacement.center)
 
 
 if __name__ == "__main__":
