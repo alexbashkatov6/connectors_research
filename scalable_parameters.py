@@ -459,15 +459,27 @@ if __name__ == "__main__":
         print(srp.x, srp.y)
         print(srp.to_rp())
 
-    test_5 = True
+    test_5 = False
     if test_5:
         cv = SceneCSView(RelativePlacement(4, 2))
-        # cs_1 = SceneCS(ScalableRelativePlacement(1, 2), parent=cv.base_cs)
         cs_1 = SceneCS(ScalableRelativePlacement(9, 6, math.atan(3 / 4)), cv.base_cs)
         cs_2 = SceneCS(ScalableRelativePlacement(10, 5, math.pi / 2 - math.atan(3 / 4), False), cs_1)
         cs_3 = SceneCS(ScalableRelativePlacement(1, 2, math.pi / 2), cs_2)
-        # cv.scale = 2
         cv.translate_view(Point2D(0, 0), Point2D(0, 0))
         print()
         cv.move_cs(cs_1, Point2D(13, 8), Point2D(15, 9))
         # cv.zoom_relative_view(Point2D(13, 8), 2)
+
+    test_6 = True
+    if test_6:
+        cv = SceneCSView(RelativePlacement(4, 2))
+        cs_1 = SceneCS(ScalableRelativePlacement(ScalableParameter(ScalePolicy(ScaleBehavior(ScaleBehavior.unscalable)), 9),
+                                                 ScalableParameter(ScalePolicy(ScaleBehavior(ScaleBehavior.unscalable)), 6), math.atan(3 / 4)), cv.base_cs)
+        cs_2 = SceneCS(ScalableRelativePlacement(ScalableParameter(ScalePolicy(ScaleBehavior(ScaleBehavior.unscalable)), 10),
+                                                 ScalableParameter(ScalePolicy(ScaleBehavior(ScaleBehavior.unscalable)), 5), math.pi / 2 - math.atan(3 / 4), False), cs_1)
+        cs_3 = SceneCS(ScalableRelativePlacement(ScalableParameter(ScalePolicy(ScaleBehavior(ScaleBehavior.unscalable)), 1),
+                                                 ScalableParameter(ScalePolicy(ScaleBehavior(ScaleBehavior.unscalable)), 2), math.pi / 2), cs_2)
+        cv.translate_view(Point2D(0, 0), Point2D(0, 0))
+        print()
+        # cv.move_cs(cs_1, Point2D(13, 8), Point2D(15, 9))
+        cv.zoom_relative_view(Point2D(13, 8), 2)
