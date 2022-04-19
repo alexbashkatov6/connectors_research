@@ -136,7 +136,7 @@ def plus_minus_1_to_bool(i: int) -> bool:
 
 
 class RelativePlacement:
-    def __init__(self, x: Real = 0, y: Real = 0, angle: Real = 0, direct_orientation: bool = True):
+    def __init__(self, x: Real = 0, y: Real = 0, angle: Real = 0, direct_orientation: bool = True, scale_policy: ScaleBehavior = None):
         self.x: Real = x
         self.y: Real = y
         self.angle: Real = angle
@@ -180,7 +180,7 @@ def local_rp(base_cs_absolute_rp: RelativePlacement, absolute_rp_: RelativePlace
 
 
 class SceneCS:
-    def __init__(self, init_placement: RelativePlacement = None, parent_cs: SceneCS = None):
+    def __init__(self, rp: RelativePlacement = None, parent_cs: SceneCS = None):
         """ if cs is base, init_placement is relative to corner view cs, else - in base """
         self.is_base_scene_cs = False
         self.relative_scene_position: RelativePlacement = None
@@ -191,7 +191,7 @@ class SceneCS:
         else:
             parent_cs.child_cs.append(self)
             self.parent_cs = parent_cs
-            self.relative_scene_position: RelativePlacement = init_placement
+            self.relative_scene_position: RelativePlacement = rp
             self.eval_absolute_scene_position()
         self.child_cs = []
 
@@ -209,11 +209,13 @@ class SceneCS:
 
 
 class SceneCSView:
+    """ current view management """
     def __init__(self, base_scene_cs_position: RelativePlacement):
         self.base_scene_cs_position = base_scene_cs_position
         self.scale = 1
 
     def cs_view_position(self, cs: SceneCS):
+        """ cs position on view window """
         return absolute_rp(self.base_scene_cs_position, cs.absolute_scene_position, self.scale)
 
     def translate_view(self, start_point_view_coords: Point2D, end_point_view_coords: Point2D):
@@ -268,6 +270,26 @@ class Ring(Primitive):
         pass
 
 
+class ElementaryItem:
+    def __init__(self):
+        self.main_cs = None
+
+
+class ComposedItem:
+    def __init__(self):
+        self.main_cs = None
+
+
+class GlobalItemManager:
+    def __init__(self):
+        self.base_cs_scene = SceneCS()
+        self.view = SceneCSView(RelativePlacement(0, 0))
+        self.composed_items = []
+
+    def add_item(self, ci: ComposedItem, rp: RelativePlacement):
+        pass
+
+
 if __name__ == "__main__":
     test_1 = False
     if test_1:
@@ -318,3 +340,7 @@ if __name__ == "__main__":
                                                                                                cv.cs_view_position(cs_4),
                                                                                                cv.cs_view_position(cs_5)))
         print("cs_1 efter", cs_1.absolute_scene_position)
+
+    test_3 = False
+    if test_3:
+        m = GlobalItemManager()
