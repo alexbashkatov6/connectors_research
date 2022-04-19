@@ -258,6 +258,7 @@ class LinearParameter:
     def __init__(self, base_value: Real, cs: SceneCS):
         self.base_value = base_value
         self.cs = cs
+        """ add parameter to children of cs """
 
 
 class SceneCS(Node):
@@ -468,9 +469,9 @@ if __name__ == "__main__":
 
     test_3 = False
     if test_3:
-        cs = SceneCS("lala")
-        cs_1 = SceneCS("blabla", parent=cs)
-        print([node for node in PreOrderIter(cs)])
+        cs_ = SceneCS("lala")
+        cs_1 = SceneCS("blabla", parent=cs_)
+        print([node for node in PreOrderIter(cs_)])
 
     test_4 = False
     if test_4:
