@@ -89,3 +89,13 @@ class C2View(QGraphicsView):
         # direct_orientation = plus_minus_1_to_bool(bool_to_plus_minus_1(parent_abs.direct_orientation) * \
         #                                           bool_to_plus_minus_1(rel.direct_orientation))
         # return RelativePlacement(x, y, angle, direct_orientation)
+
+
+
+    # def reverse(self) -> ScalableRelativePlacement:
+    #     dir_coef = bool_to_plus_minus_1(self.direct_orientation)
+    #     x = - self.x * math.cos(self.angle) - self.y * math.sin(self.angle)
+    #     y = (self.x * math.sin(self.angle) - self.y * math.cos(self.angle)) * dir_coef
+    #     angle = -self.angle * dir_coef
+    #     dir_or = self.direct_orientation
+    #     return ScalableRelativePlacement(x, y, angle, dir_or)
