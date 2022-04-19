@@ -188,9 +188,21 @@ class ScalableRelativePlacement:
     def x(self):
         return self._param_x.value
 
+    @x.setter
+    def x(self, val: Union[Real, ScalableParameter]):
+        if isinstance(val, Real):
+            val = ScalableParameter(self._param_x.policy, val)
+        self._param_x = val
+
     @property
     def y(self):
         return self._param_y.value
+
+    @y.setter
+    def y(self, val: Union[Real, ScalableParameter]):
+        if isinstance(val, Real):
+            val = ScalableParameter(self._param_y.policy, val)
+        self._param_y = val
 
     @property
     def scale(self):
@@ -290,7 +302,7 @@ class SceneCSView:
     @base_cs_view_position.setter
     def base_cs_view_position(self, val: RelativePlacement):
         self.base_cs.view_position = val
-        self.evaluate_view()
+        # self.evaluate_view()
 
     def evaluate_view(self):
         for cs in PreOrderIter(self.base_cs):
@@ -306,20 +318,25 @@ class SceneCSView:
     #     return absolute_rp(self.base_scene_cs_position, cs.absolute_scene_position, self.scale)
 
     def translate_view(self, start_point_view_coords: Point2D, end_point_view_coords: Point2D):
-        x, y, angle, direct_orientation = self.base_cs_view_position.params
-        new_x = x + float(end_point_view_coords.x) - float(start_point_view_coords.x)
-        new_y = y + float(end_point_view_coords.y) - float(start_point_view_coords.y)
-        self.base_cs_view_position = RelativePlacement(new_x, new_y, angle, direct_orientation)
+        # x, y, angle, direct_orientation = self.base_cs_view_position.params
+        self.base_cs_view_position.x = self.base_cs_view_position.x + float(end_point_view_coords.x) - float(start_point_view_coords.x)
+        self.base_cs_view_position.y = self.base_cs_view_position.y + float(end_point_view_coords.y) - float(start_point_view_coords.y)
+        self.evaluate_view()
+        # self.base_cs_view_position = RelativePlacement(new_x, new_y, angle, direct_orientation)
+        # new_x = x + float(end_point_view_coords.x) - float(start_point_view_coords.x)
+        # new_y = y + float(end_point_view_coords.y) - float(start_point_view_coords.y)
+        # self.base_cs_view_position = RelativePlacement(new_x, new_y, angle, direct_orientation)
 
     def zoom_relative_view(self, center_point_view_coords: Point2D, delta_scale: Real):
         x, y, angle, direct_orientation = self.base_cs_view_position.params
+        self.scale *= delta_scale
         x_center_point, y_center_point = float(center_point_view_coords.x), float(center_point_view_coords.y)
         delta_x_base = x_center_point - x
         delta_y_base = y_center_point - y
-        new_x = x_center_point - delta_scale * delta_x_base
-        new_y = y_center_point - delta_scale * delta_y_base
-        self.scale *= delta_scale
-        self.base_cs_view_position = RelativePlacement(new_x, new_y, angle, direct_orientation)
+        self.base_cs_view_position.x = x_center_point - delta_scale * delta_x_base
+        self.base_cs_view_position.y = y_center_point - delta_scale * delta_y_base
+        self.evaluate_view()
+        # self.base_cs_view_position = RelativePlacement(new_x, new_y, angle, direct_orientation)
 
     def coords_of_view_point_in_cs(self, p_view: Point2D, cs: SceneCS) -> Point2D:
         p_scene = (float(p_view.x)-self.base_cs_view_position.x)/self.scale, \
@@ -332,10 +349,10 @@ class SceneCSView:
         old_rel_params = cs.relative_scene_position.params
         pnt_start_move_in_parent_cs = self.coords_of_view_point_in_cs(start_point_view_coords, parent_cs)
         pnt_end_move_in_parent_cs = self.coords_of_view_point_in_cs(end_point_view_coords, parent_cs)
-        new_x = old_rel_params[0] + float(pnt_end_move_in_parent_cs.x) - float(pnt_start_move_in_parent_cs.x)
-        new_y = old_rel_params[1] + float(pnt_end_move_in_parent_cs.y) - float(pnt_start_move_in_parent_cs.y)
-        new_rp = ScalableRelativePlacement(new_x, new_y, old_rel_params[2], old_rel_params[3])
-        cs.relative_scene_position = new_rp
+        cs.relative_scene_position.x = old_rel_params[0] + float(pnt_end_move_in_parent_cs.x) - float(pnt_start_move_in_parent_cs.x)
+        cs.relative_scene_position.y = old_rel_params[1] + float(pnt_end_move_in_parent_cs.y) - float(pnt_start_move_in_parent_cs.y)
+        # new_rp = ScalableRelativePlacement(new_x, new_y, old_rel_params[2], old_rel_params[3])
+        # cs.relative_scene_position = new_rp
         self.evaluate_view()
         # cs.eval_absolute_scene_position()
         # for child in cs.all_children():
