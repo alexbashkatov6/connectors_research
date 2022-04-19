@@ -245,8 +245,23 @@ def local_rp(base_cs_absolute_rp: RelativePlacement, absolute_rp_: RelativePlace
     return RelativePlacement(x, y, angle, direct_orientation)
 
 
+"""
+ points management policy ?
+ linear sizes policy
+ linear_policy 
+ class LinearParameter
+ class ConstParameter
+ """
+
+
+class LinearParameter:
+    def __init__(self, base_value: Real, cs: SceneCS):
+        self.base_value = base_value
+        self.cs = cs
+
+
 class SceneCS(Node):
-    def __init__(self, rp: ScalableRelativePlacement = None, parent=None, children=None):
+    def __init__(self, rp: ScalableRelativePlacement = None, parent=None, children=None):  # , scale_policy: ScalePolicy = None
         super().__init__("", parent, children)
         self.relative_scene_position: ScalableRelativePlacement = rp
         self.view_position: Optional[RelativePlacement] = None
@@ -392,6 +407,11 @@ class GlobalItemManager:
         self.composed_items = []
 
     def add_item(self, ci: ComposedItem, rp: ScalableRelativePlacement):
+        pass
+
+
+class Elementary:
+    def __init__(self):
         pass
 
 
