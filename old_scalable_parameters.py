@@ -317,7 +317,7 @@ if __name__ == "__main__":
         cv = SceneCSView(RelativePlacement(4, 2))
         # cv.scale = 2
         # cv.translate_view(Point2D(0, 0), Point2D(3, 5))
-        # cv.relative_zoom(Point2D(0, 0), 2)
+        # cv.zoom_relative_view(Point2D(0, 0), 2)
         # print(cv.cs_view_position(cs_3))
         # print(local_rp(cs_1.absolute_scene_position, RelativePlacement(14, 16)))
         # print(cv.coords_of_view_point_in_cs(Point2D(18, 18), cs_1))
