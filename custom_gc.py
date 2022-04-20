@@ -111,6 +111,7 @@ class Ellips:
         return self._base_path
 
     def scaled_redraw(self, scale_factor: float):
+        scale_factor = 1
         self.evaluate_path(scale_factor)
 
 
@@ -154,6 +155,7 @@ class Thorn:
         return self._base_path
 
     def scaled_redraw(self, scale_factor: float):
+        scale_factor = 1
         self.evaluate_path(scale_factor)
         self.set_view_properties(scale_factor)
 
@@ -188,6 +190,7 @@ class ThornLabel:
         return self._base_path
 
     def scaled_redraw(self, scale_factor: float):
+        scale_factor = 1
         self.evaluate_path(scale_factor)
 
 
@@ -297,6 +300,7 @@ class HedgehogPoint:
         #  | QGraphicsItem.ItemIgnoresTransformations
 
     def evaluate_thorn_labels(self, scale_factor: float):
+        scale_factor = 1
         """ if distance between two rays less then mean, label should be placed outside this angle """
         sizes = []
         widths = []
@@ -441,6 +445,7 @@ class Connector:
         return self._base_path
 
     def scaled_redraw(self, scale_factor: float):
+        scale_factor = 1
         self.set_view_properties(scale_factor)
 
 
